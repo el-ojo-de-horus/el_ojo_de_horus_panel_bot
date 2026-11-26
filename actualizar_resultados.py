@@ -7,7 +7,8 @@ from bs4 import BeautifulSoup
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-URL_RESULTADOS = "https://loteriadehoy.com/animalitos/resultados/"
+URL_LOTTO_ACTIVO = "https://www.lottoactivo.com/resultados/lotto_activo/"
+URL_LA_GRANJITA = "https://triples.bet/products-results/granjita-results"
 
 cred_dict = json.loads(os.environ["FIREBASE_SERVICE_ACCOUNT"])
 cred = credentials.Certificate(cred_dict)
@@ -35,7 +36,13 @@ HORAS_VALIDAS = [
     "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"
 ]
 
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept-Language": "es-VE,es;q=0.9,en;q=0.8"
+}
+
 RE_HORA = re.compile(r"\b(0?[89]:00\s*AM|1[01]:00\s*AM|12:00\s*PM|0?[1-7]:00\s*PM)\b", re.IGNORECASE)
+RE_NUMERO_ANIMAL = re.compile(r"^(00|[0-3]?\d)\b(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+)?")
 
 def normalizar_num(n):
     n = n.strip()
@@ -54,18 +61,23 @@ def normalizar_hora(h):
     return h
 
 def buscar_numero_en_texto(texto):
-    # Busca un número al inicio o seguido del nombre de un animalito
+    if "pendiente" in texto.lower():
+        return None
+    m_inicio = RE_NUMERO_ANIMAL.match(texto.strip())
+    if m_inicio:
+        num = normalizar_num(m_inicio.group(1))
+        if num is not None and num in ANIMALITOS:
+            return num
     for m in re.finditer(r"(?<!\d)(00|[0-3]?\d)(?!\d)", texto):
         num = normalizar_num(m.group(1))
         if num is not None and num in ANIMALITOS:
-            # Evita capturar números de horas (ej: 8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7) si van pegados a :00
             fin = m.end()
             if texto[fin:fin+3] == ":00":
                 continue
             return num
     return None
 
-def extraer_sorteos_seccion(lineas):
+def extraer_sorteos_de_lineas(lineas):
     resultados = {}
     for i, linea in enumerate(lineas):
         m_hora = RE_HORA.search(linea)
@@ -76,14 +88,16 @@ def extraer_sorteos_seccion(lineas):
         if hora not in HORAS_VALIDAS or hora in resultados:
             continue
 
-        # Revisa primero la misma línea, luego líneas anteriores cercanas y posteriores cercanas
+        # Revisa primero las líneas siguientes (donde viene el animalito en triples.bet) y luego las anteriores
         candidatos_contexto = [
+            " ".join(lineas[i+1:min(len(lineas), i+5)]),
             linea,
-            " ".join(lineas[max(0, i-2):i]),
-            " ".join(lineas[i+1:min(len(lineas), i+3)])
+            " ".join(lineas[max(0, i-3):i])
         ]
 
         for ctx in candidatos_contexto:
+            if "sorteo pendiente" in ctx.lower():
+                break
             num = buscar_numero_en_texto(ctx)
             if num and num in ANIMALITOS:
                 resultados[hora] = {
@@ -94,40 +108,41 @@ def extraer_sorteos_seccion(lineas):
 
     return resultados
 
-def obtener_sorteos_loteria_de_hoy():
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept-Language": "es-VE,es;q=0.9,en;q=0.8"
-    }
-    resp = requests.get(URL_RESULTADOS, headers=headers, timeout=25)
-    resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "html.parser")
-    lineas = [re.sub(r"\s+", " ", line.strip()) for line in soup.get_text("\n").splitlines() if line.strip()]
+def obtener_lotto_activo():
+    try:
+        resp = requests.get(URL_LOTTO_ACTIVO, headers=HEADERS, timeout=25)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "html.parser")
+        lineas = [re.sub(r"\s+", " ", l.strip()) for l in soup.get_text("\n").splitlines() if l.strip()]
+        return extraer_sorteos_de_lineas(lineas)
+    except Exception as e:
+        print("Error consultando lottoactivo.com:", e)
+        return {}
 
-    idx_la = next((i for i, l in enumerate(lineas) if l.lower() == "lotto activo"), -1)
-    if idx_la == -1:
-        idx_la = next((i for i, l in enumerate(lineas) if "lotto activo" in l.lower() and "2" not in l.lower() and "int" not in l.lower() and "rd" not in l.lower()), -1)
+def obtener_la_granjita():
+    try:
+        resp = requests.get(URL_LA_GRANJITA, headers=HEADERS, timeout=25)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "html.parser")
+        lineas = [re.sub(r"\s+", " ", l.strip()) for l in soup.get_text("\n").splitlines() if l.strip()]
 
-    lotto_activo = {}
-    la_granjita = {}
-
-    if idx_la != -1:
-        bloque = lineas[idx_la:idx_la + 220]
-        idx_lg = next((i for i, l in enumerate(bloque[1:], start=1) if "la granjita" in l.lower() and "millonaria" not in l.lower()), -1)
-
-        if idx_lg != -1:
-            lineas_la = bloque[:idx_lg]
-            resto_lg = bloque[idx_lg:]
-            idx_fin = next((i for i, l in enumerate(resto_lg[1:], start=1) if any(k in l.lower() for k in ["lotto activo 2", "guacharo activo", "monje millonario"])), len(resto_lg))
-            lineas_lg = resto_lg[:idx_fin]
-
-            lotto_activo = extraer_sorteos_seccion(lineas_la)
-            la_granjita = extraer_sorteos_seccion(lineas_lg)
-
-    return lotto_activo, la_granjita, len(lineas)
+        idx_inicio = next(
+            (i for i, l in enumerate(lineas) if "resultados la granjita" in l.lower() or l.lower() == "hoy"),
+            0
+        )
+        sub_lineas = lineas[idx_inicio:]
+        idx_fin = next(
+            (i for i, l in enumerate(sub_lineas) if "otros sorteos y resultados" in l.lower()),
+            len(sub_lineas)
+        )
+        return extraer_sorteos_de_lineas(sub_lineas[:idx_fin])
+    except Exception as e:
+        print("Error consultando triples.bet:", e)
+        return {}
 
 def main():
-    lotto_activo, la_granjita, total_lineas = obtener_sorteos_loteria_de_hoy()
+    lotto_activo = obtener_lotto_activo()
+    la_granjita = obtener_la_granjita()
 
     doc_ref = db.collection("resultados_diarios").document(fecha_hoy)
     payload = {"fecha": fecha_hoy}
@@ -138,7 +153,7 @@ def main():
         payload["la_granjita"] = la_granjita
 
     doc_ref.set(payload, merge=True)
-    print(f"Líneas HTML: {total_lineas} | Fecha: {fecha_hoy}")
+    print(f"Fecha: {fecha_hoy}")
     print("Lotto Activo:", lotto_activo)
     print("La Granjita:", la_granjita)
 
