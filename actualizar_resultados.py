@@ -29,22 +29,23 @@ ANIMALITOS = {
     "34": "Venado", "35": "Jirafa", "36": "Culebra"
 }
 
-HORAS_VALIDAS = {
+HORAS_VALIDAS = [
     "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM",
     "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM",
     "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"
-}
+]
 
-RE_HORA = re.compile(r"^(0?[89]:00\s*AM|1[01]:00\s*AM|12:00\s*PM|0?[1-7]:00\s*PM)$", re.IGNORECASE)
-RE_NUM_ANIMAL = re.compile(r"^(00|[0-3]?\d)\b(?:\s+([A-Za-zÁÉÍÓÚÑáéíóúñ]+))?")
+RE_HORA = re.compile(r"\b(0?[89]:00\s*AM|1[01]:00\s*AM|12:00\s*PM|0?[1-7]:00\s*PM)\b", re.IGNORECASE)
 
 def normalizar_num(n):
     n = n.strip()
     if n == "00":
         return "00"
     if n.isdigit():
-        return str(int(n))
-    return n
+        val = int(n)
+        if 0 <= val <= 36:
+            return str(val)
+    return None
 
 def normalizar_hora(h):
     h = re.sub(r"\s+", " ", h.strip().upper())
@@ -52,69 +53,81 @@ def normalizar_hora(h):
         h = "0" + h
     return h
 
-def parsear_lineas_ruleta(lineas):
-    resultados = {}
-    pendiente_animal = None
-
-    for line in lineas:
-        # Si la línea es un número con animalito (ej: "12 Caballo" o "4 Alacran")
-        m_animal = RE_NUM_ANIMAL.match(line)
-        if m_animal:
-            num = normalizar_num(m_animal.group(1))
-            if num in ANIMALITOS:
-                pendiente_animal = num
+def buscar_numero_en_texto(texto):
+    # Busca un número al inicio o seguido del nombre de un animalito
+    for m in re.finditer(r"(?<!\d)(00|[0-3]?\d)(?!\d)", texto):
+        num = normalizar_num(m.group(1))
+        if num is not None and num in ANIMALITOS:
+            # Evita capturar números de horas (ej: 8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7) si van pegados a :00
+            fin = m.end()
+            if texto[fin:fin+3] == ":00":
                 continue
+            return num
+    return None
 
-        # Si la línea es una hora (ej: "08:00 AM")
-        m_hora = RE_HORA.match(line)
-        if m_hora and pendiente_animal is not None:
-            hora = normalizar_hora(m_hora.group(1))
-            if hora in HORAS_VALIDAS and hora not in resultados:
+def extraer_sorteos_seccion(lineas):
+    resultados = {}
+    for i, linea in enumerate(lineas):
+        m_hora = RE_HORA.search(linea)
+        if not m_hora:
+            continue
+
+        hora = normalizar_hora(m_hora.group(1))
+        if hora not in HORAS_VALIDAS or hora in resultados:
+            continue
+
+        # Revisa primero la misma línea, luego líneas anteriores cercanas y posteriores cercanas
+        candidatos_contexto = [
+            linea,
+            " ".join(lineas[max(0, i-2):i]),
+            " ".join(lineas[i+1:min(len(lineas), i+3)])
+        ]
+
+        for ctx in candidatos_contexto:
+            num = buscar_numero_en_texto(ctx)
+            if num and num in ANIMALITOS:
                 resultados[hora] = {
-                    "numero": pendiente_animal,
-                    "animal": ANIMALITOS[pendiente_animal]
+                    "numero": num,
+                    "animal": ANIMALITOS[num]
                 }
-            pendiente_animal = None
+                break
 
     return resultados
 
 def obtener_sorteos_loteria_de_hoy():
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept-Language": "es-VE,es;q=0.9,en;q=0.8"
     }
     resp = requests.get(URL_RESULTADOS, headers=headers, timeout=25)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
-    lineas = [line.strip() for line in soup.get_text("\n").splitlines() if line.strip()]
+    lineas = [re.sub(r"\s+", " ", line.strip()) for line in soup.get_text("\n").splitlines() if line.strip()]
+
+    idx_la = next((i for i, l in enumerate(lineas) if l.lower() == "lotto activo"), -1)
+    if idx_la == -1:
+        idx_la = next((i for i, l in enumerate(lineas) if "lotto activo" in l.lower() and "2" not in l.lower() and "int" not in l.lower() and "rd" not in l.lower()), -1)
 
     lotto_activo = {}
     la_granjita = {}
 
-    try:
-        idx_la = lineas.index("Lotto Activo")
-    except ValueError:
-        idx_la = next((i for i, l in enumerate(lineas) if l == "Lotto Activo"), -1)
-
     if idx_la != -1:
-        sub_lineas = lineas[idx_la:idx_la + 180]
-        try:
-            idx_lg_rel = sub_lineas.index("La Granjita")
-        except ValueError:
-            idx_lg_rel = next((i for i, l in enumerate(sub_lineas) if l == "La Granjita"), -1)
+        bloque = lineas[idx_la:idx_la + 220]
+        idx_lg = next((i for i, l in enumerate(bloque[1:], start=1) if "la granjita" in l.lower() and "millonaria" not in l.lower()), -1)
 
-        if idx_lg_rel != -1:
-            lineas_la = sub_lineas[:idx_lg_rel]
-            resto = sub_lineas[idx_lg_rel + 1:]
-            idx_fin_lg = next((i for i, l in enumerate(resto) if "Lotto Activo 2" in l or "Guacharo Activo" in l), len(resto))
-            lineas_lg = resto[:idx_fin_lg]
+        if idx_lg != -1:
+            lineas_la = bloque[:idx_lg]
+            resto_lg = bloque[idx_lg:]
+            idx_fin = next((i for i, l in enumerate(resto_lg[1:], start=1) if any(k in l.lower() for k in ["lotto activo 2", "guacharo activo", "monje millonario"])), len(resto_lg))
+            lineas_lg = resto_lg[:idx_fin]
 
-            lotto_activo = parsear_lineas_ruleta(lineas_la)
-            la_granjita = parsear_lineas_ruleta(lineas_lg)
+            lotto_activo = extraer_sorteos_seccion(lineas_la)
+            la_granjita = extraer_sorteos_seccion(lineas_lg)
 
-    return lotto_activo, la_granjita
+    return lotto_activo, la_granjita, len(lineas)
 
 def main():
-    lotto_activo, la_granjita = obtener_sorteos_loteria_de_hoy()
+    lotto_activo, la_granjita, total_lineas = obtener_sorteos_loteria_de_hoy()
 
     doc_ref = db.collection("resultados_diarios").document(fecha_hoy)
     payload = {"fecha": fecha_hoy}
@@ -125,7 +138,9 @@ def main():
         payload["la_granjita"] = la_granjita
 
     doc_ref.set(payload, merge=True)
-    print(f"Fecha {fecha_hoy} sincronizada -> Lotto Activo: {lotto_activo} | La Granjita: {la_granjita}")
+    print(f"Líneas HTML: {total_lineas} | Fecha: {fecha_hoy}")
+    print("Lotto Activo:", lotto_activo)
+    print("La Granjita:", la_granjita)
 
 if __name__ == "__main__":
     main()
