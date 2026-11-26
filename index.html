@@ -337,12 +337,12 @@
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "TU_API_KEY",
-      authDomain: "TU_PROYECTO.firebaseapp.com",
-      projectId: "TU_PROYECTO_ID",
-      storageBucket: "TU_PROYECTO.appspot.com",
-      messagingSenderId: "TU_SENDER_ID",
-      appId: "TU_APP_ID"
+      apiKey: "AIzaSyB80qRF7wTtw2J_lTkqOOlSqJmhQs0KqWY",
+      authDomain: "el-ojo-de-horus-bot.firebaseapp.com",
+      projectId: "el-ojo-de-horus-bot",
+      storageBucket: "el-ojo-de-horus-bot.firebasestorage.app",
+      messagingSenderId: "890848858177",
+      appId: "1:890848858177:web:70bc20f1c991d6a20db6c0"
     };
 
     const CARPETA_IMAGENES = "img";
@@ -579,8 +579,6 @@
     }
 
     async function leerResultadosFirebase() {
-      if (!firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith("TU_")) return;
-
       try {
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -592,7 +590,7 @@
           actualizarInterfazConFirebase(docReciente.data(), docReciente.id);
         }
       } catch (e) {
-        // Mantiene respaldo visual si aún no hay conexión
+        // Mantiene respaldo visual si aún no hay documentos o conexión
       }
     }
 
