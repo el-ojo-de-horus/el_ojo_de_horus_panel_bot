@@ -2,54 +2,67 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>El Ojo De Horus — Panel del Bot</title>
-  
-  <!-- SDK Oficial de Telegram Web Apps -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <!-- Carga de Tailwind CSS para utilidades responsivas y tipografía Inter -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  
   <style>
-    /* Estilos base y diseño personalizado fiel al panel de Telegram */
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      padding: 16px 16px 145px 16px;
-      background-color: #0f172a;
-      font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+      padding: 14px 14px 145px 14px;
+      background: #0f172a;
+      font-family: 'Segoe UI', Arial, sans-serif;
       color: #1e293b;
-      min-height: 100vh;
-      /* Evita el rebote elástico en móviles dentro de la app */
-      overscroll-behavior-y: none; 
     }
-
     .contenedor-bot {
       max-width: 780px;
       margin: 0 auto;
     }
 
-    /* Control de visibilidad de secciones */
+    /* PANTALLA INICIAL (ANTES DE PULSAR CUALQUIER BOTÓN) */
+    .pantalla-inicio {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 28px 20px;
+      text-align: center;
+      color: #f8fafc;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      margin-bottom: 16px;
+    }
+    .pantalla-inicio img {
+      width: 110px;
+      height: 110px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 3px solid #ffeb3b;
+      margin-bottom: 14px;
+    }
+    .pantalla-inicio h1 {
+      margin: 0 0 8px 0;
+      font-size: 22px;
+      color: #ffeb3b;
+      letter-spacing: 0.5px;
+    }
+    .pantalla-inicio p {
+      margin: 0;
+      font-size: 15px;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+
     .vista-seccion {
       display: none;
-      animation: fadeIn 0.25s ease-out;
+      margin-bottom: 16px;
     }
     .vista-seccion.activa {
       display: block;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
     /* 1. PRONÓSTICO DE HOY (5 FIJOS) */
     .proyeccion-box {
       background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
       overflow: hidden;
       border: 1px solid #e2e8f0;
     }
@@ -57,48 +70,47 @@
       background: #1a1a1a;
       color: #ffeb3b;
       text-align: center;
-      padding: 20px 16px;
+      padding: 18px 15px;
       font-size: 19px;
       font-weight: 900;
       text-transform: uppercase;
-      letter-spacing: 0.8px;
+      letter-spacing: 1px;
     }
     .proyeccion-header img {
       max-width: 320px;
       width: 100%;
       height: auto;
-      border-radius: 10px;
-      margin: 0 auto 12px auto;
-      display: block;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      border: 2px solid #333;
+    }
+    .badge-cierre-7pm {
+      display: inline-block;
+      background: #27272a;
+      color: #e4e4e7;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+      letter-spacing: 0.4px;
     }
     .proyeccion-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 15px 20px;
+      padding: 14px 20px;
       border-bottom: 1px solid #eeeeee;
-      transition: background-color 0.15s ease;
     }
-    .proyeccion-item:hover {
-      background-color: #f8fafc;
-    }
-    .proyeccion-item:last-child {
-      border-bottom: none;
-    }
-    .tipo {
-      font-weight: 700;
-      color: #475569;
-      font-size: 15px;
-    }
+    .proyeccion-item:last-child { border-bottom: none; }
+    .tipo { font-weight: bold; color: #555; font-size: 15px; }
     .animalito {
       font-weight: 900;
-      font-size: 16px;
-      padding: 7px 15px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+      font-size: 17px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       color: #ffffff;
-      letter-spacing: 0.3px;
     }
     .c1 { background: #E65100; }
     .c2 { background: #0288D1; }
@@ -109,92 +121,69 @@
     /* 2. ANÁLISIS TÉCNICO (CINTA Y BLOQUEOS) */
     .seccion-cinta {
       background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
-      padding: 22px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      padding: 20px;
       font-size: 16px;
-      line-height: 1.65;
+      line-height: 1.6;
       border: 1px solid #e2e8f0;
     }
     .seccion-cinta h2 {
       color: #1a1a1a;
-      font-size: 20px;
-      font-weight: 800;
-      border-bottom: 3px solid #ffeb3b;
-      padding-bottom: 8px;
+      font-size: 21px;
+      border-bottom: 2px solid #ffeb3b;
+      padding-bottom: 6px;
       margin-top: 0;
-      margin-bottom: 14px;
-    }
-    .seccion-cinta p {
-      margin-top: 0;
-      margin-bottom: 14px;
-      color: #334155;
-    }
-    .seccion-cinta p:last-child {
-      margin-bottom: 0;
     }
 
     /* 3. EL DATO DEL AUDITOR (DATO CALIENTE) */
     .seccion-dato-caliente {
       background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
-      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      padding: 18px 20px;
       border: 1px solid #e2e8f0;
     }
     .dato-curioso {
       background: #fffde7;
       border-left: 5px solid #fbc02d;
-      padding: 16px;
+      padding: 15px;
       margin: 0;
-      border-radius: 8px;
+      border-radius: 4px;
       font-style: italic;
       font-size: 16px;
-      line-height: 1.65;
-      color: #334155;
+      line-height: 1.6;
     }
 
-    /* 4. MÁS INFORMACIÓN */
+    /* 4. MÁS INFORMACIÓN / VIP */
     .seccion-info {
       background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
-      padding: 22px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      padding: 20px;
       font-size: 15px;
-      line-height: 1.65;
+      line-height: 1.6;
       border: 1px solid #e2e8f0;
     }
     .seccion-info h2 {
       margin-top: 0;
-      margin-bottom: 12px;
       color: #1a1a1a;
       font-size: 20px;
-      font-weight: 800;
-      border-bottom: 3px solid #ffeb3b;
-      padding-bottom: 8px;
+      border-bottom: 2px solid #ffeb3b;
+      padding-bottom: 6px;
     }
     .btn-tg {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      margin-top: 14px;
+      display: inline-block;
+      margin-top: 12px;
       background: #0088cc;
       color: #ffffff;
       text-decoration: none;
       font-weight: 700;
-      padding: 12px 20px;
-      border-radius: 10px;
-      transition: background-color 0.2s ease, transform 0.1s ease;
-    }
-    .btn-tg:hover {
-      background: #0077b3;
-    }
-    .btn-tg:active {
-      transform: scale(0.98);
+      padding: 12px 18px;
+      border-radius: 8px;
     }
 
-    /* BARRA DE BOTONES FIJA ABAJO (ESTILO TECLADO DE BOT EN TELEGRAM) */
+    /* BARRA DE BOTONES ABAJO */
     .panel-botones {
       position: fixed;
       bottom: 0;
@@ -207,30 +196,22 @@
       gap: 10px;
       background: #1e293b;
       padding: 12px;
-      border-radius: 16px 16px 0 0;
+      border-radius: 14px 14px 0 0;
       border-top: 1px solid #334155;
-      box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 -6px 20px rgba(0,0,0,0.45);
       z-index: 100;
-      padding-bottom: calc(12px + env(safe-area-inset-bottom));
     }
     .btn-tab {
       background: #273549;
       color: #f8fafc;
       border: 1px solid #475569;
-      border-radius: 12px;
-      padding: 13px 12px;
-      font-size: 14px;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 15px;
       font-weight: 700;
       cursor: pointer;
       text-align: center;
       transition: all 0.2s ease;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    @media (min-width: 640px) {
-      .btn-tab {
-        font-size: 15px;
-      }
     }
     .btn-tab:hover {
       background: #334155;
@@ -239,69 +220,71 @@
       background: #ffeb3b;
       color: #111827;
       border-color: #ffeb3b;
-      box-shadow: 0 2px 10px rgba(255, 235, 59, 0.35);
     }
   </style>
 </head>
 <body>
   <div class="contenedor-bot">
 
+    <!-- PANTALLA DE BIENVENIDA INICIAL -->
+    <section id="vistaInicio" class="pantalla-inicio">
+      <img alt="El Ojo De Horus" src="img/0.jpg" />
+      <h1>👑 El Ojo De Horus 🔥</h1>
+      <p>Selecciona una opción en el panel inferior para consultar las tendencias, el análisis técnico de cinta o el dato de la hora.</p>
+    </section>
+
     <!-- SECCIÓN 1: PRONÓSTICO DE HOY -->
-    <section id="vistaPronostico" class="vista-seccion activa">
+    <section id="vistaPronostico" class="vista-seccion">
       <div class="proyeccion-box">
         <div class="proyeccion-header">
           <div>
-            <a href="https://blogger.googleusercontent.com/img/a/AVvXsEjkkdFgQQBgQ4Grf_p1WFIiZv_00odpNjazlbcj4xVEbmThDf-aGMynrQCqoA3hZ0TXFJX5hM1Ne2DoB4FzN1bWGEY6ZqjTyYvjBzMZZPKl51inAJKBzoCesk_r1lblEjGKhGrX3TAHMjcURuQ6-RjXVoGb_ubqU0AH8AO8DXpSzJPZpKG3bd3ZzcjKT-M" target="_blank" rel="nofollow">
-              <img
-                alt="Portada de Tendencias El Ojo De Horus"
-                src="https://blogger.googleusercontent.com/img/a/AVvXsEjkkdFgQQBgQ4Grf_p1WFIiZv_00odpNjazlbcj4xVEbmThDf-aGMynrQCqoA3hZ0TXFJX5hM1Ne2DoB4FzN1bWGEY6ZqjTyYvjBzMZZPKl51inAJKBzoCesk_r1lblEjGKhGrX3TAHMjcURuQ6-RjXVoGb_ubqU0AH8AO8DXpSzJPZpKG3bd3ZzcjKT-M"
-                onerror="this.onerror=null;this.src='https://placehold.co/640x360/1a1a1a/ffeb3b?text=El+Ojo+De+Horus';"
-              />
-            </a>
+            <img id="imgCierre7PM" alt="Cierre 7:00 PM" src="img/0.jpg" />
           </div>
-          📊 LOS 5 FIJOS DEL JUEVES 26 DE NOVIEMBRE
+          <div><span id="infoCierre7PM" class="badge-cierre-7pm">Cierre 07:00 PM: Sincronizando...</span></div>
+          <div id="tituloPronosticoDia">📊 Los 5 Fijos de Hoy</div>
         </div>
 
-        <div class="proyeccion-item">
-          <span class="tipo">Pilar Deuda Histórica:</span>
-          <span class="animalito c1">13 Mono</span>
-        </div>
-        <div class="proyeccion-item">
-          <span class="tipo">Pilar Vértice Simetría:</span>
-          <span class="animalito c2">35 Jirafa</span>
-        </div>
-        <div class="proyeccion-item">
-          <span class="tipo">Triangulación VIP:</span>
-          <span class="animalito c3">04 Alacrán</span>
-        </div>
-        <div class="proyeccion-item">
-          <span class="tipo">Mecánica de Ruptura:</span>
-          <span class="animalito c4">26 Vaca</span>
-        </div>
-        <div class="proyeccion-item">
-          <span class="tipo">Espejo Acuático:</span>
-          <span class="animalito c5">0 Delfín</span>
+        <div id="lista5Fijos">
+          <div class="proyeccion-item">
+            <span class="tipo">Pilar Deuda Histórica:</span>
+            <span class="animalito c1">13 Mono</span>
+          </div>
+          <div class="proyeccion-item">
+            <span class="tipo">Pilar Vértice Simetría:</span>
+            <span class="animalito c2">35 Jirafa</span>
+          </div>
+          <div class="proyeccion-item">
+            <span class="tipo">Triangulación VIP:</span>
+            <span class="animalito c3">04 Alacrán</span>
+          </div>
+          <div class="proyeccion-item">
+            <span class="tipo">Mecánica de Ruptura:</span>
+            <span class="animalito c4">26 Vaca</span>
+          </div>
+          <div class="proyeccion-item">
+            <span class="tipo">Espejo Acuático:</span>
+            <span class="animalito c5">0 Delfín</span>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- SECCIÓN 2: ANÁLISIS TÉCNICO (CINTA Y DETECCIÓN DE BLOQUEOS) -->
+    <!-- SECCIÓN 2: ANÁLISIS TÉCNICO -->
     <section id="vistaAnalisis" class="vista-seccion">
       <div class="seccion-cinta">
-        <h2>📉 Análisis de Cinta y Detección de Bloqueos</h2>
+        <h2 id="tituloCintaDia">📉 Análisis de Cinta y Detección de Bloqueos</h2>
         <div id="contenidoCintaDinamico">
-          <p>En el Tape Reading del miércoles 25 de noviembre detectamos una fuerte concentración en la <strong>Terminal 4, 5 y 0</strong> (Alacrán 04 marcando triple salida y cierre nocturno, Jirafa 35 respondiendo en doble impacto en la tarde y noche, y Cochino 20 junto a Vaca 26 dominando los bloques matutinos). Aplicando la <strong>Mecánica de Ruptura</strong>, el algoritmo liberará presión por el 'Salto al Opuesto' (Regla de Salto <strong>4↔9 / 5↔0 / 0↔5</strong>) impulsando la tracción hacia el <strong>Alacrán (04)</strong> y reforzando la continuidad del <strong>Mono (13)</strong> y la <strong>Jirafa (35)</strong>.</p>
-          <p>Asimismo, la contundencia del Mono (13) en la tarde y la persistencia del Alacrán (04) posicionan al <strong>Mono (13)</strong> y a la <strong>Jirafa (35)</strong> al frente de la matriz para la jornada de este jueves.</p>
+          <p>Sincronizando datos de Lotto Activo y La Granjita desde Firebase para generar el Tape Reading y las zonas de bloqueo...</p>
         </div>
       </div>
     </section>
 
-    <!-- SECCIÓN 3: EL DATO DEL AUDITOR (DATO CALIENTE DE LA HORA) -->
+    <!-- SECCIÓN 3: EL DATO DEL AUDITOR -->
     <section id="vistaDato" class="vista-seccion">
       <div class="seccion-dato-caliente">
         <div class="dato-curioso">
           💡 <strong><em>El Dato Caliente de la Hora:</em></strong><br />
-          <em id="textoDatoCaliente">¡Mucho ojo aquí, jugador! Cuando el MONO (13) te responde en la tarde y el ALACRÁN (04) te satura la cinta con tres salidas incluyendo el cierre, la banca amarra las series ágiles y los terminales bajos. Para destrabar la jugada este jueves desde temprano, el algoritmo siempre busca la rápida descarga de la JIRAFA (35) o el coletazo directo de la VACA (26). ¡Muy atento desde el primer sorteo de las 08:00 AM para garantizar el cobro!</em>
+          <em id="textoDatoCaliente">Sincronizando último sorteo registrado en Firebase para calcular el dato caliente de la hora...</em>
         </div>
       </div>
     </section>
@@ -310,75 +293,49 @@
     <section id="vistaInfo" class="vista-seccion">
       <div class="seccion-info">
         <h2>📲 Más Información — El Ojo De Horus</h2>
-        <p>Consulta nuestras tendencias diarias, auditorías de cinta y accede al canal oficial en Telegram para recibir los reportes y la sección de <strong>Datos V.I.P.</strong> de Lotto Activo y La Granjita.</p>
-        <a class="btn-tg" href="https://t.me/DATOSlottoACTIVObot" target="_blank" rel="nofollow">
-          <span>✈️</span> Abrir Bot en Telegram (@DATOSlottoACTIVObot)
-        </a>
+        <p>Consulta nuestras tendencias diarias y accede a la comunidad oficial en Telegram para recibir los reportes y la sección de <strong>Datos V.I.P.</strong></p>
+        <a class="btn-tg" href="https://t.me/DATOSlottoACTIVObot" target="_blank" rel="nofollow">Ir al Bot en Telegram</a>
       </div>
     </section>
 
-    <!-- BARRA DE BOTONES FIJA ABAJO (ESTILO TECLADO DE BOT) -->
-    <nav class="panel-botones" aria-label="Menú del panel">
-      <button type="button" class="btn-tab activo" data-target="vistaPronostico">🔮 Pronóstico de Hoy</button>
+    <!-- BOTONES DEL PANEL DEL BOT -->
+    <div class="panel-botones">
+      <button type="button" class="btn-tab" data-target="vistaPronostico">🔮 Pronóstico de Hoy</button>
       <button type="button" class="btn-tab" data-target="vistaAnalisis">📊 Análisis Técnico</button>
       <button type="button" class="btn-tab" data-target="vistaDato">💡 El Dato del Auditor</button>
       <button type="button" class="btn-tab" data-target="vistaInfo">📲 Más Información</button>
-    </nav>
+    </div>
 
   </div>
 
-  <!-- LÓGICA DE NAVEGACIÓN ENTRE PESTAÑAS -->
+  <!-- CAMBIO DE SECCIÓN SOLO AL PULSAR UN BOTÓN -->
   <script>
-    // --- INICIALIZACIÓN DE TELEGRAM WEB APP ---
-    // Esto hace que la app ocupe toda la pantalla y se adapte al tema
-    if (window.Telegram && window.Telegram.WebApp) {
-      window.Telegram.WebApp.ready();
-      window.Telegram.WebApp.expand();
-    }
-
+    const vistaInicio = document.getElementById("vistaInicio");
     const botonesTab = document.querySelectorAll(".btn-tab");
     const vistas = document.querySelectorAll(".vista-seccion");
 
-    function activarVista(targetId) {
-      const vistaDestino = document.getElementById(targetId);
-      if (!vistaDestino) return;
-
-      botonesTab.forEach(b => {
-        b.classList.toggle("activo", b.getAttribute("data-target") === targetId);
-      });
-      vistas.forEach(v => {
-        v.classList.toggle("activa", v.id === targetId);
-      });
-    }
-
     botonesTab.forEach(btn => {
       btn.addEventListener("click", () => {
-        activarVista(btn.getAttribute("data-target"));
+        const targetId = btn.getAttribute("data-target");
+        if (vistaInicio) vistaInicio.style.display = "none";
+
+        botonesTab.forEach(b => b.classList.remove("activo"));
+        vistas.forEach(v => v.classList.remove("activa"));
+
+        btn.classList.add("activo");
+        const vistaActiva = document.getElementById(targetId);
+        if (vistaActiva) vistaActiva.classList.add("activa");
       });
     });
-
-    // Soporte opcional por parámetro URL (?vista=analisis | dato | info)
-    const params = new URLSearchParams(window.location.search);
-    const vistaParam = params.get("vista");
-    const mapaVistas = {
-      pronostico: "vistaPronostico",
-      analisis: "vistaAnalisis",
-      dato: "vistaDato",
-      info: "vistaInfo"
-    };
-    if (vistaParam && mapaVistas[vistaParam.toLowerCase()]) {
-      activarVista(mapaVistas[vistaParam.toLowerCase()]);
-    }
   </script>
 
-  <!-- INTEGRACIÓN MODULAR CON FIREBASE FIRESTORE (Lotto Activo y La Granjita) -->
+  <!-- MOTOR DE PROYECCIÓN + LECTURA AUTOMÁTICA DESDE FIREBASE -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
       getFirestore, collection, getDocs, query, orderBy, limit
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // Reemplaza estas credenciales con las de tu proyecto real en Firebase Console
     const firebaseConfig = {
       apiKey: "TU_API_KEY",
       authDomain: "TU_PROYECTO.firebaseapp.com",
@@ -387,6 +344,9 @@
       messagingSenderId: "TU_SENDER_ID",
       appId: "TU_APP_ID"
     };
+
+    const CARPETA_IMAGENES = "img";
+    const EXTENSION_IMAGEN = ".jpg";
 
     const HORAS = [
       "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM",
@@ -402,8 +362,61 @@
       "4": "9", "9": "4"
     };
 
-    const contenidoCintaEl = document.getElementById("contenidoCintaDinamico");
-    const textoDatoEl = document.getElementById("textoDatoCaliente");
+    const ANIMALITOS = {
+      "0": "Delfín", "00": "Ballena",
+      "1": "Carnero", "2": "Toro", "3": "Ciempiés", "4": "Alacrán",
+      "5": "León", "6": "Rana", "7": "Perico", "8": "Ratón",
+      "9": "Águila", "10": "Tigre", "11": "Gato", "12": "Caballo",
+      "13": "Mono", "14": "Paloma", "15": "Zorro", "16": "Oso",
+      "17": "Pavo", "18": "Burro", "19": "Chivo", "20": "Cochino",
+      "21": "Gallo", "22": "Camello", "23": "Cebra", "24": "Iguana",
+      "25": "Gallina", "26": "Vaca", "27": "Perro", "28": "Zamuro",
+      "29": "Elefante", "30": "Caimán", "31": "Lapa", "32": "Ardilla",
+      "33": "Pescado", "34": "Venado", "35": "Jirafa", "36": "Culebra"
+    };
+
+    const DIAS_SEMANA = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const MESES = [
+      "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+      "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    ];
+
+    function normalizarNumero(num) {
+      const s = String(num).trim();
+      if (s === "00") return "00";
+      const n = parseInt(s, 10);
+      return Number.isNaN(n) ? s : String(n);
+    }
+
+    function obtenerRutaImagenAnimalito(numero) {
+      const limpio = String(numero).trim();
+      let nombreArchivo;
+
+      if (limpio === "00") {
+        nombreArchivo = "00";
+      } else if (limpio === "0") {
+        nombreArchivo = "0";
+      } else {
+        const entero = parseInt(limpio, 10);
+        if (!Number.isNaN(entero) && entero >= 1 && entero <= 9) {
+          nombreArchivo = `0${entero}`;
+        } else {
+          nombreArchivo = limpio;
+        }
+      }
+
+      return `${CARPETA_IMAGENES}/${nombreArchivo}${EXTENSION_IMAGEN}`;
+    }
+
+    function formatearFechaSiguiente(fechaISO) {
+      const [anio, mes, dia] = fechaISO.split("-").map(Number);
+      const fecha = new Date(anio, mes - 1, dia);
+      fecha.setDate(fecha.getDate() + 1);
+      const nombreDia = DIAS_SEMANA[fecha.getDay()];
+      const numeroDia = fecha.getDate();
+      const nombreMes = MESES[fecha.getMonth()];
+      return { nombreDia, textoFecha: `${nombreDia} ${numeroDia} de ${nombreMes}` };
+    }
 
     function extraerSorteos(data) {
       const registros = [];
@@ -411,18 +424,19 @@
         const bloque = data[ruleta] || {};
         HORAS.forEach((hora, idxHora) => {
           const item = bloque[hora];
-          if (item && item.numero !== undefined && item.animal) {
-            const numStr = String(item.numero).trim();
-            const terminal = numStr.slice(-1);
+          if (item && item.numero !== undefined) {
+            const numNorm = normalizarNumero(item.numero);
+            const animalNombre = item.animal ? String(item.animal).trim() : (ANIMALITOS[numNorm] || "");
+            const terminal = numNorm.slice(-1);
             registros.push({
               ruleta,
               nombreRuleta: ruleta === "lotto_activo" ? "Lotto Activo" : "La Granjita",
               hora,
               idxHora,
-              numero: numStr,
-              animal: String(item.animal).trim(),
+              numero: numNorm,
+              animal: animalNombre,
               terminal,
-              opuesto: OPUESTOS[terminal] ?? "?"
+              opuesto: OPUESTOS[terminal] ?? "5"
             });
           }
         });
@@ -430,46 +444,138 @@
       return registros;
     }
 
-    function procesarDatosDesdeFirebase(data, fechaStr) {
+    function calcular5Fijos(registros) {
+      const conteoAnimal = {};
+      const ruletasPorAnimal = {};
+      const conteoTerminal = {};
+
+      registros.forEach(r => {
+        conteoAnimal[r.numero] = (conteoAnimal[r.numero] || 0) + 1;
+        if (!ruletasPorAnimal[r.numero]) ruletasPorAnimal[r.numero] = new Set();
+        ruletasPorAnimal[r.numero].add(r.ruleta);
+        conteoTerminal[r.terminal] = (conteoTerminal[r.terminal] || 0) + 1;
+      });
+
+      const elegidos = new Set();
+      const elegirCandidato = (listaNumeros, respaldo) => {
+        for (const num of listaNumeros) {
+          if (ANIMALITOS[num] && !elegidos.has(num)) {
+            elegidos.add(num);
+            return { numero: num, animal: ANIMALITOS[num] };
+          }
+        }
+        for (const num of respaldo) {
+          if (ANIMALITOS[num] && !elegidos.has(num)) {
+            elegidos.add(num);
+            return { numero: num, animal: ANIMALITOS[num] };
+          }
+        }
+        return { numero: "13", animal: "Mono" };
+      };
+
+      const ordenadosFrecuencia = Object.keys(conteoAnimal)
+        .sort((a, b) => conteoAnimal[b] - conteoAnimal[a]);
+      const pilar1 = elegirCandidato(ordenadosFrecuencia, ["13", "29", "0"]);
+
+      const cruzados = Object.keys(ruletasPorAnimal)
+        .filter(num => ruletasPorAnimal[num].size >= 2);
+      const pilar2 = elegirCandidato(cruzados, ["35", "34", "13"]);
+
+      const cierres = registros
+        .filter(r => r.hora === "07:00 PM" || r.hora === "06:00 PM")
+        .map(r => r.numero);
+      const pilar3 = elegirCandidato(cierres, ["4", "29", "5"]);
+
+      const terminalTop = Object.entries(conteoTerminal)
+        .sort((a, b) => b[1] - a[1])[0]?.[0] || "4";
+      const opuestoTop = OPUESTOS[terminalTop] || "9";
+      const candidatosOpuestos = Object.keys(ANIMALITOS)
+        .filter(num => num.slice(-1) === opuestoTop);
+      const pilar4 = elegirCandidato(candidatosOpuestos, ["26", "29", "15"]);
+
+      const acuaticos = ["0", "00", "30", "33", "6"];
+      const pilar5 = elegirCandidato(acuaticos, ["0", "00", "30"]);
+
+      return [
+        { tipo: "Pilar Deuda Histórica:", clase: "c1", ...pilar1 },
+        { tipo: "Pilar Vértice Simetría:", clase: "c2", ...pilar2 },
+        { tipo: "Triangulación VIP:", clase: "c3", ...pilar3 },
+        { tipo: "Mecánica de Ruptura:", clase: "c4", ...pilar4 },
+        { tipo: "Espejo Acuático:", clase: "c5", ...pilar5 }
+      ];
+    }
+
+    function actualizarInterfazConFirebase(data, fechaStr) {
       const registros = extraerSorteos(data);
+      const { nombreDia, textoFecha } = formatearFechaSiguiente(fechaStr);
+
+      document.getElementById("tituloPronosticoDia").textContent = `📊 Los 5 Fijos del ${textoFecha}`;
+      document.getElementById("tituloCintaDia").textContent = `📉 Análisis de Cinta y Detección de Bloqueos para el ${nombreDia}`;
+
+      const cierreLA = data.lotto_activo?.["07:00 PM"];
+      const cierreLG = data.la_granjita?.["07:00 PM"];
+      const cierre7PM = cierreLA || cierreLG;
+      const ruleta7PM = cierreLA ? "Lotto Activo" : (cierreLG ? "La Granjita" : "");
+      const imgCierreEl = document.getElementById("imgCierre7PM");
+
+      if (cierre7PM && cierre7PM.numero !== undefined) {
+        const num7 = normalizarNumero(cierre7PM.numero);
+        const nom7 = cierre7PM.animal || ANIMALITOS[num7] || "";
+        imgCierreEl.src = obtenerRutaImagenAnimalito(num7);
+        imgCierreEl.alt = `${num7} ${nom7}`;
+        document.getElementById("infoCierre7PM").textContent = `Cierre 07:00 PM (${ruleta7PM}): ${num7} ${nom7}`;
+      } else {
+        imgCierreEl.src = obtenerRutaImagenAnimalito("0");
+        document.getElementById("infoCierre7PM").textContent = `Cierre 07:00 PM: Pendiente por salir`;
+      }
+
       if (!registros.length) return;
+
+      const fijos = calcular5Fijos(registros);
+      document.getElementById("lista5Fijos").innerHTML = fijos.map(f => {
+        const numDisplay = f.numero.length === 1 && f.numero !== "0" ? `0${f.numero}` : f.numero;
+        return `
+          <div class="proyeccion-item">
+            <span class="tipo">${f.tipo}</span>
+            <span class="animalito ${f.clase}">${numDisplay} ${f.animal}</span>
+          </div>
+        `;
+      }).join("");
 
       const conteoTerminales = {};
       const conteoAnimales = {};
-
       registros.forEach(r => {
         conteoTerminales[r.terminal] = (conteoTerminales[r.terminal] || 0) + 1;
-        const clave = `${r.numero} ${r.animal}`;
+        const clave = `${r.animal} (${r.numero})`;
         conteoAnimales[clave] = (conteoAnimales[clave] || 0) + 1;
       });
 
       const terminalesTop = Object.entries(conteoTerminales)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3);
-
       const repetidos = Object.entries(conteoAnimales)
         .filter(([, cant]) => cant >= 2)
-        .map(([nombre, cant]) => `${nombre} (${cant})`);
+        .map(([nombre, cant]) => `${nombre} con ${cant} salidas`);
 
-      const topLabels = terminalesTop.map(([t]) => `Terminal ${t}`);
+      const topLabels = terminalesTop.map(([t]) => t).join(", ");
       const reglasSalto = terminalesTop.map(([t]) => `${t}↔${OPUESTOS[t]}`).join(" / ");
       const focoBloqueo = repetidos.length
-        ? `Detectamos presión en <strong>${repetidos.join(", ")}</strong>.`
-        : `La cinta muestra distribución activa en ambas ruletas.`;
+        ? `Detectamos fuerte presión en <strong>${repetidos.join(", ")}</strong>.`
+        : `La cinta muestra distribución activa entre ambas ruletas.`;
 
-      contenidoCintaEl.innerHTML = `
-        <p>En el Tape Reading de <strong>${fechaStr}</strong> detectamos concentración en <strong>${topLabels.join(", ")}</strong>. ${focoBloqueo} Aplicando la <strong>Mecánica de Ruptura</strong>, el algoritmo proyecta liberación por <strong>Salto al Opuesto</strong> (Regla de Salto: <strong>${reglasSalto}</strong>).</p>
-        <p>La sincronía entre <strong>Lotto Activo</strong> y <strong>La Granjita</strong> marca las zonas clave de tensión y arrastre para la jornada.</p>
+      document.getElementById("contenidoCintaDinamico").innerHTML = `
+        <p>En el Tape Reading de <strong>${fechaStr}</strong> detectamos concentración en la <strong>Terminal ${topLabels}</strong>. ${focoBloqueo} Aplicando la <strong>Mecánica de Ruptura</strong>, el algoritmo proyecta liberación por <strong>Salto al Opuesto</strong> (Regla de Salto: <strong>${reglasSalto}</strong>) impulsando la tracción hacia <strong>${fijos[0].animal} (${fijos[0].numero})</strong> y <strong>${fijos[1].animal} (${fijos[1].numero})</strong>.</p>
+        <p>Asimismo, la presión acumulada posiciona a <strong>${fijos[0].animal} (${fijos[0].numero})</strong> y <strong>${fijos[3].animal} (${fijos[3].numero})</strong> al frente de la matriz para la jornada del <strong>${nombreDia}</strong>.</p>
       `;
 
       const ultimo = [...registros].sort((a, b) => {
         if (b.idxHora !== a.idxHora) return b.idxHora - a.idxHora;
         return a.ruleta === "la_granjita" ? -1 : 1;
       })[0];
-
       const siguienteHora = HORAS[Math.min(ultimo.idxHora + 1, HORAS.length - 1)];
 
-      textoDatoEl.textContent = `¡Mucho ojo aquí, jugador! Último movimiento en ${ultimo.nombreRuleta} a las ${ultimo.hora} con ${ultimo.animal.toUpperCase()} (${ultimo.numero}), activando la Terminal ${ultimo.terminal} y su salto opuesto en Terminal ${ultimo.opuesto}. Para las ${siguienteHora}, vigila la respuesta de los terminales ${ultimo.terminal} y ${ultimo.opuesto} en Lotto Activo y La Granjita. ¡Muy atento a la cinta para asegurar el cobro!`;
+      document.getElementById("textoDatoCaliente").textContent =
+        `¡Mucho ojo aquí, jugador! El último impacto registrado fue a las ${ultimo.hora} en ${ultimo.nombreRuleta} con ${ultimo.animal.toUpperCase()} (${ultimo.numero}), activando la Terminal ${ultimo.terminal} y su opuesto en Terminal ${ultimo.opuesto}. Para la franja de las ${siguienteHora}, vigila la rápida descarga de ${fijos[0].animal.toUpperCase()} (${fijos[0].numero}) o el coletazo de ${fijos[3].animal.toUpperCase()} (${fijos[3].numero}). ¡Muy atento a la cinta para garantizar el cobro!`;
     }
 
     async function leerResultadosFirebase() {
@@ -483,14 +589,14 @@
         const snap = await getDocs(q);
         if (!snap.empty) {
           const docReciente = snap.docs[0];
-          procesarDatosDesdeFirebase(docReciente.data(), docReciente.id);
+          actualizarInterfazConFirebase(docReciente.data(), docReciente.id);
         }
       } catch (e) {
-        console.warn("Firebase en espera de configuración:", e.message);
+        // Mantiene respaldo visual si aún no hay conexión
       }
     }
 
-    window.addEventListener("load", leerResultadosFirebase);
+    leerResultadosFirebase();
   </script>
 </body>
 </html>
