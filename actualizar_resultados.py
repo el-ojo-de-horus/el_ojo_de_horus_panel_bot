@@ -35,6 +35,9 @@ HORAS_VALIDAS = {
     "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"
 }
 
+RE_HORA = re.compile(r"^(0?[89]:00\s*AM|1[01]:00\s*AM|12:00\s*PM|0?[1-7]:00\s*PM)$", re.IGNORECASE)
+RE_NUM_ANIMAL = re.compile(r"^(00|[0-3]?\d)\b(?:\s+([A-Za-zÁÉÍÓÚÑáéíóúñ]+))?")
+
 def normalizar_num(n):
     n = n.strip()
     if n == "00":
@@ -49,20 +52,30 @@ def normalizar_hora(h):
         h = "0" + h
     return h
 
-def extraer_bloque_ruleta(texto_bloque):
+def parsear_lineas_ruleta(lineas):
     resultados = {}
-    patron = re.compile(
-        r"\b(00|[0-3]?\d)\b\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+\s+(0?[89]:00\s*AM|1[01]:00\s*AM|12:00\s*PM|0?[1-7]:00\s*PM)",
-        re.IGNORECASE
-    )
-    for match in patron.finditer(texto_bloque):
-        num = normalizar_num(match.group(1))
-        hora = normalizar_hora(match.group(2))
-        if num in ANIMALITOS and hora in HORAS_VALIDAS and hora not in resultados:
-            resultados[hora] = {
-                "numero": num,
-                "animal": ANIMALITOS[num]
-            }
+    pendiente_animal = None
+
+    for line in lineas:
+        # Si la línea es un número con animalito (ej: "12 Caballo" o "4 Alacran")
+        m_animal = RE_NUM_ANIMAL.match(line)
+        if m_animal:
+            num = normalizar_num(m_animal.group(1))
+            if num in ANIMALITOS:
+                pendiente_animal = num
+                continue
+
+        # Si la línea es una hora (ej: "08:00 AM")
+        m_hora = RE_HORA.match(line)
+        if m_hora and pendiente_animal is not None:
+            hora = normalizar_hora(m_hora.group(1))
+            if hora in HORAS_VALIDAS and hora not in resultados:
+                resultados[hora] = {
+                    "numero": pendiente_animal,
+                    "animal": ANIMALITOS[pendiente_animal]
+                }
+            pendiente_animal = None
+
     return resultados
 
 def obtener_sorteos_loteria_de_hoy():
@@ -73,19 +86,30 @@ def obtener_sorteos_loteria_de_hoy():
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
     lineas = [line.strip() for line in soup.get_text("\n").splitlines() if line.strip()]
-    texto_plano = "\n".join(lineas)
 
     lotto_activo = {}
     la_granjita = {}
 
-    idx_la = texto_plano.find("Lotto Activo")
+    try:
+        idx_la = lineas.index("Lotto Activo")
+    except ValueError:
+        idx_la = next((i for i, l in enumerate(lineas) if l == "Lotto Activo"), -1)
+
     if idx_la != -1:
-        fragmento_la = texto_plano[idx_la:idx_la + 4500]
-        partes_lg = fragmento_la.split("La Granjita", 1)
-        lotto_activo = extraer_bloque_ruleta(partes_lg[0])
-        if len(partes_lg) > 1:
-            sub_lg = partes_lg[1].split("Lotto Activo 2", 1)[0]
-            la_granjita = extraer_bloque_ruleta(sub_lg)
+        sub_lineas = lineas[idx_la:idx_la + 180]
+        try:
+            idx_lg_rel = sub_lineas.index("La Granjita")
+        except ValueError:
+            idx_lg_rel = next((i for i, l in enumerate(sub_lineas) if l == "La Granjita"), -1)
+
+        if idx_lg_rel != -1:
+            lineas_la = sub_lineas[:idx_lg_rel]
+            resto = sub_lineas[idx_lg_rel + 1:]
+            idx_fin_lg = next((i for i, l in enumerate(resto) if "Lotto Activo 2" in l or "Guacharo Activo" in l), len(resto))
+            lineas_lg = resto[:idx_fin_lg]
+
+            lotto_activo = parsear_lineas_ruleta(lineas_la)
+            la_granjita = parsear_lineas_ruleta(lineas_lg)
 
     return lotto_activo, la_granjita
 
@@ -101,7 +125,7 @@ def main():
         payload["la_granjita"] = la_granjita
 
     doc_ref.set(payload, merge=True)
-    print(f"Fecha {fecha_hoy} sincronizada -> Lotto Activo: {len(lotto_activo)} horas | La Granjita: {len(la_granjita)} horas")
+    print(f"Fecha {fecha_hoy} sincronizada -> Lotto Activo: {lotto_activo} | La Granjita: {la_granjita}")
 
 if __name__ == "__main__":
     main()
