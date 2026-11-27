@@ -1,124 +1,234 @@
-import datetime
-import firebase_admin
-from firebase_admin import credentials, firestore
-from collections import Counter
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Ojo de Horus - Panel de Proyecciones</title>
+    <style>
+        /* Estilos generales (Modo Oscuro) */
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #eab308; /* Dorado Horus */
+            --danger: #ef4444;
+            --success: #22c55e;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { color: var(--accent); text-align: center; margin-bottom: 5px; }
+        p.subtitle { color: var(--text-muted); text-align: center; margin-top: 0; margin-bottom: 30px; font-size: 0.9em; }
+        
+        /* Contenedor principal */
+        .container { width: 100%; max-width: 600px; }
 
-# ─── CONFIGURACIÓN FIREBASE ───
-cred = credentials.Certificate("firebase-credentials.json")
-firebase_admin.initialize_app(cred)
-db = firestore.client()
+        /* Tarjeta de Análisis (Dato Caliente) */
+        .analisis-card {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(234, 179, 8, 0.1);
+        }
+        .analisis-card h3 { margin-top: 0; color: var(--accent); font-size: 1.1em; }
+        .analisis-card p { line-height: 1.5; font-size: 0.95em; color: #cbd5e1; margin-bottom: 0; }
 
-# ─── TABLAS ───
-ANIMALITOS = {
-    "0":"Delfín","00":"Ballena","1":"Carnero","2":"Toro","3":"Ciempiés","4":"Alacrán","5":"León","6":"Rana","7":"Perico","8":"Ratón","9":"Águila","10":"Tigre","11":"Gato","12":"Caballo","13":"Mono","14":"Paloma","15":"Zorro","16":"Oso","17":"Pavo","18":"Burro","19":"Chivo","20":"Cochino","21":"Gallo","22":"Camello","23":"Cebra","24":"Iguana","25":"Gallina","26":"Vaca","27":"Perro","28":"Zamuro","29":"Elefante","30":"Caimán","31":"Lapa","32":"Ardilla","33":"Pescado","34":"Venado","35":"Jirafa","36":"Culebra"
-}
-TERMINALES = {
-    0: ["0", "00", "10", "20", "30"], 1: ["1", "11", "21", "31"], 2: ["2", "12", "22", "32"],
-    3: ["3", "13", "23", "33"], 4: ["4", "14", "24", "34"], 5: ["5", "15", "25", "35"],
-    6: ["6", "16", "26", "36"], 7: ["7", "17", "27"], 8: ["8", "18", "28"], 9: ["9", "19", "29"],
-}
+        /* Lista de Pilares */
+        .pilares-grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px; }
+        .pilar-item {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid var(--accent);
+            transition: transform 0.2s;
+        }
+        .pilar-item:hover { transform: translateX(5px); }
+        .pilar-nombre { font-weight: 600; font-size: 0.9em; color: var(--text-muted); }
+        .pilar-valor { font-size: 1.2em; font-weight: bold; color: var(--text-main); }
 
-def calcular_piramide(fecha):
-    fila = [int(c) for c in fecha.strftime("%d%m%Y")]
-    while len(fila) > 1:
-        fila = [(fila[i] + fila[i+1]) % 10 for i in range(len(fila) - 1)]
-        if len(fila) == 2: bases = tuple(fila)
-    return fila[0], bases
+        /* Último sorteo */
+        .ultimo-sorteo {
+            background-color: #1e293b;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+            border: 1px dashed #475569;
+        }
+        .ultimo-sorteo span { color: var(--accent); font-weight: bold; }
 
-def obtener_historico_reciente(dias=7):
-    """Lee los últimos N días para calcular la deuda real."""
-    hoy = datetime.date.today()
-    apariciones = Counter()
-    for i in range(1, dias + 1):
-        fecha_str = (hoy - datetime.timedelta(days=i)).isoformat()
-        doc = db.collection('resultados').document(fecha_str).get()
-        if doc.exists:
-            data = doc.to_dict()
-            for op in ['lotto_activo', 'la_granjita']:
-                if op in data:
-                    for hora, entry in data[op].items():
-                        if 'numero' in entry:
-                            apariciones[str(entry['numero'])] += 1
-    return apariciones
+        /* Botón Telegram */
+        .btn-telegram {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: #229ED9;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.1em;
+            box-sizing: border-box;
+            transition: background-color 0.3s;
+        }
+        .btn-telegram:hover { background-color: #1a7fb3; }
 
-def analizar_cinta_hoy():
-    """Analiza los resultados de HOY para la ruptura de MAÑANA."""
-    hoy = datetime.date.today().isoformat()
-    doc = db.collection('resultados').document(hoy).get()
-    if not doc.exists: return [], []
-    
-    data = doc.to_dict()
-    todos = []
-    for op in ['lotto_activo', 'la_granjita']:
-        if op in data:
-            for h, entry in data[op].items():
-                if 'numero' in entry: todos.append(str(entry['numero']))
-    
-    conteo_term = Counter([int(n[-1]) for n in todos])
-    saturadas = [t for t, c in conteo_term.items() if c >= 4]
-    
-    triangulaciones = []
-    if "12" in todos and "18" in todos: triangulaciones.append("23")
-    if "0" in todos and "33" in todos: triangulaciones.append("00")
-    if "11" in todos and "27" in todos: triangulaciones.append("05")
-    
-    return saturadas, triangulaciones
+        /* Loader */
+        .sincronizando { color: var(--text-muted); font-style: italic; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
 
-def generar_proyeccion():
-    hoy = datetime.date.today()
-    manana = hoy + datetime.timedelta(days=1)
-    
-    # 1. Datos Base
-    vertice, bases = calcular_piramide(manana)
-    universo_term = list(set([vertice] + list(bases)))
-    universo_nums = [n for t in universo_term for n in TERMINALES[t]]
-    
-    saturadas, triangulaciones = analizar_cinta_hoy()
-    historico = obtener_historico_reciente()
+    <div class="container">
+        <h1>👁️ El Ojo de Horus</h1>
+        <p class="subtitle">Panel de Proyecciones Estadísticas - Lotto Activo y La Granjita</p>
 
-    fijos = {}
+        <!-- Análisis de Cinta -->
+        <div class="analisis-card">
+            <h3>🔥 Dato Caliente de la Hora</h3>
+            <p id="datoCaliente" class="sincronizando">Sincronizando con el Cerebro...</p>
+        </div>
 
-    # PILAR 1: DEUDA HISTÓRICA (El que menos ha salido en 7 días DENTRO del universo)
-    cand_deuda = sorted(universo_nums, key=lambda n: historico.get(n, 0))
-    fijos["Deuda_Historica"] = cand_deuda[0]
+        <!-- Los 5 Pilares del Cerebro -->
+        <h3 style="color: #cbd5e1; border-bottom: 1px solid #334155; padding-bottom: 10px;">Los 5 Fijos de Hoy</h3>
+        <div class="pilares-grid">
+            <div class="pilar-item">
+                <span class="pilar-nombre">Pilar Deuda Histórica</span>
+                <span class="pilar-valor" id="pilar-deuda">...</span>
+            </div>
+            <div class="pilar-item">
+                <span class="pilar-nombre">Pilar Vértice / Simetría</span>
+                <span class="pilar-valor" id="pilar-simetria">...</span>
+            </div>
+            <div class="pilar-item">
+                <span class="pilar-nombre">Triangulación VIP</span>
+                <span class="pilar-valor" id="pilar-triangulacion">...</span>
+            </div>
+            <div class="pilar-item">
+                <span class="pilar-nombre">Mecánica de Ruptura</span>
+                <span class="pilar-valor" id="pilar-ruptura">...</span>
+            </div>
+            <div class="pilar-item">
+                <span class="pilar-nombre">Espejo y Simetría</span>
+                <span class="pilar-valor" id="pilar-espejo">...</span>
+            </div>
+        </div>
 
-    # PILAR 2: VÉRTICE (Un número de la terminal del vértice)
-    fijos["Vertice_Simetria"] = TERMINALES[vertice][1] # Tomamos el segundo de la familia para variar
+        <!-- Último Sorteo en Vivo -->
+        <div class="ultimo-sorteo">
+            <span style="font-size: 0.8em; display: block; margin-bottom: 5px;">ÚLTIMO SORTEO REGISTRADO</span>
+            <div id="cierre" class="sincronizando">Esperando resultados...</div>
+        </div>
 
-    # PILAR 3: TRIANGULACIÓN VIP
-    if triangulaciones:
-        fijos["Triangulacion_VIP"] = triangulaciones[0]
-    else:
-        fijos["Triangulacion_VIP"] = TERMINALES[bases[0]][0]
+        <!-- Botón VIP -->
+        <a href="https://t.me/TU_BOT_AQUI" target="_blank" class="btn-telegram">
+            Ir al Bot en Telegram (Comunidad V.I.P.)
+        </a>
+    </div>
 
-    # PILAR 4: RUPTURA (Opuesto de la terminal más saturada)
-    if saturadas:
-        t_sat = saturadas[0]
-        t_op = (t_sat + 5) % 10
-        fijos["Mecanica_Ruptura"] = TERMINALES[t_op][2] # Tercero de la familia
-    else:
-        fijos["Mecanica_Ruptura"] = TERMINALES[(vertice + 5) % 10][0]
+    <!-- SCRIPTS DE FIREBASE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    # PILAR 5: ESPEJO ACUÁTICO
-    v_str = str(fijos["Vertice_Simetria"])
-    fijos["Espejo_Acuario"] = "00" if v_str in ["0", "10", "20"] else f"0{v_str[-1]}"
+        const firebaseConfig = { projectId: "el-ojo-de-horus-bot" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-    # TRIPLETAS (Agrupando familias de los 3 fijos principales)
-    t1 = int(fijos["Triangulacion_VIP"][-1])
-    t2 = int(fijos["Mecanica_Ruptura"][-1])
-    t3 = int(fijos["Vertice_Simetria"][-1])
-    tripletas = [TERMINALES[t1][:3], TERMINALES[t2][:3], TERMINALES[t3][:3]]
+        // Diccionario para mostrar el nombre del animalito
+        const ANIMALITOS = {
+            "0": "Delfín", "00": "Ballena", "1": "Carnero", "2": "Toro", "3": "Ciempiés",
+            "4": "Alacrán", "5": "León", "6": "Rana", "7": "Perico", "8": "Ratón",
+            "9": "Águila", "10": "Tigre", "11": "Gato", "12": "Caballo", "13": "Mono",
+            "14": "Paloma", "15": "Zorro", "16": "Oso", "17": "Pavo", "18": "Burro",
+            "19": "Chivo", "20": "Cochino", "21": "Gallo", "22": "Camello", "23": "Cebra",
+            "24": "Iguana", "25": "Gallina", "26": "Vaca", "27": "Perro", "28": "Zamuro",
+            "29": "Elefante", "30": "Caimán", "31": "Lapa", "32": "Ardilla", "33": "Pescado",
+            "34": "Venado", "35": "Jirafa", "36": "Culebra"
+        };
 
-    proyeccion = {
-        "fecha_proyeccion": manana.isoformat(),
-        "piramide": {"vertice": vertice, "bases": list(bases)},
-        "saturadas": saturadas,
-        "fijos": {k: {"numero": v, "animal": ANIMALITOS.get(v, "")} for k, v in fijos.items()},
-        "tripletas": tripletas
-    }
-    
-    db.collection('proyecciones').document(manana.isoformat()).set(proyeccion)
-    print(f"✅ Cerebro ejecutado. Proyección para {manana.isoformat()} guardada.")
+        function etiquetaNum(num) {
+            const n = String(num ?? "").trim();
+            return `${n.padStart(2, "0")} - ${ANIMALITOS[n] || "Desconocido"}`;
+        }
 
-if __name__ == "__main__":
-    generar_proyeccion()
+        // Obtener fecha actual de Venezuela (UTC-4)
+        const ahora = new Date();
+        const vzla = new Date(ahora.getTime() - 4 * 60 * 60 * 1000);
+        const fechaHoy = vzla.toISOString().slice(0, 10);
+
+        // ─────────────────────────────────────────────────────────────
+        // 1. ESCUCHAR AL CEREBRO (Proyecciones calculadas a las 8 PM ayer)
+        // ─────────────────────────────────────────────────────────────
+        onSnapshot(doc(db, "proyecciones", fechaHoy), (docSnap) => {
+            if (!docSnap.exists()) {
+                document.getElementById("datoCaliente").innerText = "El Cerebro aún no ha generado las proyecciones para hoy. Vuelve a las 8:30 PM.";
+                document.getElementById("datoCaliente").classList.add("sincronizando");
+                return;
+            }
+
+            const brain = docSnap.data();
+            const fijos = brain.fijos;
+
+            // Inyectar los 5 Fijos en la interfaz
+            document.getElementById("pilar-deuda").innerText = etiquetaNum(fijos.Deuda_Historica.numero);
+            document.getElementById("pilar-simetria").innerText = etiquetaNum(fijos.Vertice_Simetria.numero);
+            document.getElementById("pilar-triangulacion").innerText = etiquetaNum(fijos.Triangulacion_VIP.numero);
+            document.getElementById("pilar-ruptura").innerText = etiquetaNum(fijos.Mecanica_Ruptura.numero);
+            document.getElementById("pilar-espejo").innerText = etiquetaNum(fijos.Espejo_Acuario.numero);
+
+            // Escribir el Dato Caliente
+            const elDatoCaliente = document.getElementById("datoCaliente");
+            const saturadas = brain.saturadas.length > 0 ? brain.saturadas.join(", ") : "ninguna";
+            elDatoCaliente.classList.remove("sincronizando");
+            elDatoCaliente.innerHTML = `🧠 <b>Análisis de Cinta:</b> Ayer se saturaron las terminales <b>${saturadas}</b>. 
+                                        La pirámide de hoy marca Vértice <b>${brain.piramide.vertice}</b> y Bases <b>${brain.piramide.bases.join(" y ")}</b>. 
+                                        Las jugadas de Ruptura y las Tripletas están activas.`;
+        });
+
+        // ─────────────────────────────────────────────────────────────
+        // 2. ESCUCHAR RESULTADOS EN VIVO (Último sorteo del día)
+        // ─────────────────────────────────────────────────────────────
+        onSnapshot(doc(db, "resultados", fechaHoy), (docSnap) => {
+            if (!docSnap.exists()) return;
+            const data = docSnap.data();
+            
+            const horas = ["07:00 PM","06:00 PM","05:00 PM","04:00 PM","03:00 PM","02:00 PM","01:00 PM","12:00 PM","11:00 AM","10:00 AM","09:00 AM","08:00 AM"];
+            let encontrado = false;
+
+            for (let h of horas) {
+                if (data.lotto_activo?.[h]?.numero) {
+                    document.getElementById("cierre").classList.remove("sincronizando");
+                    document.getElementById("cierre").innerHTML = `<span>${h} (Lotto Activo)</span>: ${etiquetaNum(data.lotto_activo[h].numero)}`;
+                    encontrado = true;
+                    break;
+                }
+                if (data.la_granjita?.[h]?.numero) {
+                    document.getElementById("cierre").classList.remove("sincronizando");
+                    document.getElementById("cierre").innerHTML = `<span>${h} (La Granjita)</span>: ${etiquetaNum(data.la_granjita[h].numero)}`;
+                    encontrado = true;
+                    break;
+                }
+            }
+            if (!encontrado) {
+                document.getElementById("cierre").innerText = "Esperando el primer sorteo del día...";
+            }
+        });
+    </script>
+</body>
+</html>
