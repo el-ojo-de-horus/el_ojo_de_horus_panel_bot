@@ -1,252 +1,455 @@
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore, doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-  const firebaseConfig = {
-    projectId: "el-ojo-de-horus-bot"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  const ANIMALITOS = {
-    "0": "Delfín", "00": "Ballena", "1": "Carnero", "2": "Toro", "3": "Ciempiés",
-    "4": "Alacrán", "5": "León", "6": "Rana", "7": "Perico", "8": "Ratón",
-    "9": "Águila", "10": "Tigre", "11": "Gato", "12": "Caballo", "13": "Mono",
-    "14": "Paloma", "15": "Zorro", "16": "Oso", "17": "Pavo", "18": "Burro",
-    "19": "Chivo", "20": "Cochino", "21": "Gallo", "22": "Camello", "23": "Cebra",
-    "24": "Iguana", "25": "Gallina", "26": "Vaca", "27": "Perro", "28": "Zamuro",
-    "29": "Elefante", "30": "Caimán", "31": "Lapa", "32": "Ardilla", "33": "Pescado",
-    "34": "Venado", "35": "Jirafa", "36": "Culebra"
-  };
-
-  const ESPEJO_ACUATICO = {
-    "0": "00", "00": "0", "1": "10", "10": "1", "2": "20", "20": "2",
-    "3": "30", "30": "3", "4": "14", "14": "4", "5": "15", "15": "5",
-    "6": "16", "16": "6", "7": "17", "17": "7", "8": "18", "18": "8",
-    "9": "19", "19": "9", "11": "21", "21": "11", "12": "22", "22": "12",
-    "13": "23", "23": "13", "24": "34", "34": "24", "25": "35", "35": "25",
-    "26": "36", "36": "26", "27": "7", "28": "8", "29": "9", "31": "13",
-    "32": "23", "33": "3"
-  };
-
-  const ORDEN_HORAS = [
-    "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM",
-    "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM",
-    "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"
-  ];
-
-  const TODOS_NUMEROS = Object.keys(ANIMALITOS);
-
-  function obtenerFechaVzla() {
-    const ahora = new Date();
-    const vzla = new Date(ahora.getTime() - 4 * 60 * 60 * 1000);
-    return vzla.toISOString().slice(0, 10);
-  }
-
-  function formatearNum(num) {
-    const n = String(num ?? "").trim();
-    return ANIMALITOS[n] ? n : "0";
-  }
-
-  function etiquetaNum(num) {
-    const n = formatearNum(num);
-    return `${n.padStart(2, "0")} ${ANIMALITOS[n]}`;
-  }
-
-  function rutaImagen(num) {
-    const n = formatearNum(num);
-    const archivo = n === "00" ? "00.jpg" : `${n.padStart(2, "0")}.jpg`;
-    return `img/${archivo}`;
-  }
-
-  function extraerSecuencia(mapa = {}, fuente = "LA") {
-    const items = [];
-    for (const hora of ORDEN_HORAS) {
-      const entry = mapa?.[hora];
-      if (entry && entry.numero !== undefined) {
-        const n = formatearNum(entry.numero);
-        items.push({ hora, numero: n, animal: ANIMALITOS[n], fuente });
-      }
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>El Ojo De Horus — Panel del Bot</title>
+  <style>
+    :root {
+      --bg-main: #0b0e14;
+      --bg-card: #141923;
+      --bg-card-soft: #1b2230;
+      --accent: #f5b700;
+      --accent-soft: rgba(245, 183, 0, 0.14);
+      --text-main: #f4f6fb;
+      --text-muted: #9aa5b8;
+      --border: rgba(255, 255, 255, 0.08);
     }
-    return items;
-  }
 
-  function calcularProyecciones(data) {
-    const seqLA = extraerSecuencia(data?.lotto_activo || {}, "Lotto Activo");
-    const seqLG = extraerSecuencia(data?.la_granjita || {}, "La Granjita");
-    const combinada = [...seqLA, ...seqLG];
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-    if (combinada.length === 0) {
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-main);
+      color: var(--text-main);
+      padding-bottom: 84px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #181f2e 0%, #10141d 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .hero img {
+      width: 64px;
+      height: 64px;
+      border-radius: 14px;
+      object-fit: cover;
+      border: 1px solid var(--accent);
+      flex-shrink: 0;
+    }
+
+    .hero h1 {
+      font-size: 1.35rem;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .hero p {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .card h2,
+    .card h3 {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+      color: var(--text-main);
+    }
+
+    .cierre-box {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--bg-card-soft);
+      border-radius: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .cierre-box img {
+      width: 58px;
+      height: 58px;
+      border-radius: 10px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .fijos-list {
+      list-style: none;
+      display: grid;
+      gap: 8px;
+    }
+
+    .fijos-list li {
+      background: var(--bg-card-soft);
+      padding: 10px 12px;
+      border-radius: 10px;
+      border-left: 3px solid var(--accent);
+      font-size: 0.95rem;
+    }
+
+    .muted-text {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .dato-caliente {
+      background: var(--accent-soft);
+      border: 1px solid rgba(245, 183, 0, 0.35);
+      border-radius: 12px;
+      padding: 14px;
+      font-style: italic;
+    }
+
+    .btn-telegram {
+      display: inline-block;
+      margin-top: 12px;
+      background: var(--accent);
+      color: #111318;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 0.92rem;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(16, 20, 29, 0.96);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      padding: 8px 6px;
+      z-index: 100;
+    }
+
+    .bottom-nav a,
+    .bottom-nav button {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-align: center;
+      padding: 6px 4px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .bottom-nav a:hover,
+    .bottom-nav button:hover {
+      background: var(--bg-card-soft);
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="hero">
+      <img src="img/00.jpg" alt="El Ojo De Horus" />
+      <div>
+        <h1>👑 El Ojo De Horus 🔥</h1>
+        <p>Selecciona una opción en el panel inferior para consultar las tendencias, el análisis técnico de cinta o el dato de la hora.</p>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="cierre-box">
+        <img src="img/00.jpg" alt="Cierre 7:00 PM" />
+        <div>
+          <p id="cierre-estado">Cierre 07:00 PM: Sincronizando...</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="sec-pronostico">
+      <h2>📊 Los 5 Fijos de Hoy</h2>
+      <ul class="fijos-list">
+        <li id="fijo-deuda">Pilar Deuda Histórica: 13 Mono</li>
+        <li id="fijo-simetria">Pilar Vértice Simetría: 35 Jirafa</li>
+        <li id="fijo-triangulacion">Triangulación VIP: 04 Alacrán</li>
+        <li id="fijo-ruptura">Mecánica de Ruptura: 26 Vaca</li>
+        <li id="fijo-espejo">Espejo Acuático: 0 Delfín</li>
+      </ul>
+    </section>
+
+    <section class="card" id="sec-analisis">
+      <h2>📉 Análisis de Cinta y Detección de Bloqueos</h2>
+      <p class="muted-text" id="analisis-cinta">
+        Sincronizando datos de Lotto Activo y La Granjita desde Firebase para generar el Tape Reading y las zonas de bloqueo...
+      </p>
+    </section>
+
+    <section class="card" id="sec-auditor">
+      <h3>💡 El Dato Caliente de la Hora</h3>
+      <div class="dato-caliente">
+        <p id="dato-caliente">
+          Sincronizando último sorteo registrado en Firebase para calcular el dato caliente de la hora...
+        </p>
+      </div>
+    </section>
+
+    <section class="card" id="sec-info">
+      <h2>📲 Más Información — El Ojo De Horus</h2>
+      <p class="muted-text">
+        Consulta nuestras tendencias diarias y accede a la comunidad oficial en Telegram para recibir los reportes y la sección de <strong>Datos V.I.P.</strong>
+      </p>
+      <a class="btn-telegram" href="https://t.me/DATOSlottoACTIVObot" target="_blank" rel="noopener noreferrer">
+        Ir al Bot en Telegram
+      </a>
+    </section>
+  </div>
+
+  <nav class="bottom-nav">
+    <button type="button" data-target="sec-pronostico">🔮 Pronóstico de Hoy</button>
+    <button type="button" data-target="sec-analisis">📊 Análisis Técnico</button>
+    <button type="button" data-target="sec-auditor">💡 El Dato del Auditor</button>
+    <button type="button" data-target="sec-info">📲 Más Información</button>
+  </nav>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      projectId: "el-ojo-de-horus-bot"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const ANIMALITOS = {
+      "0": "Delfín", "00": "Ballena", "1": "Carnero", "2": "Toro", "3": "Ciempiés",
+      "4": "Alacrán", "5": "León", "6": "Rana", "7": "Perico", "8": "Ratón",
+      "9": "Águila", "10": "Tigre", "11": "Gato", "12": "Caballo", "13": "Mono",
+      "14": "Paloma", "15": "Zorro", "16": "Oso", "17": "Pavo", "18": "Burro",
+      "19": "Chivo", "20": "Cochino", "21": "Gallo", "22": "Camello", "23": "Cebra",
+      "24": "Iguana", "25": "Gallina", "26": "Vaca", "27": "Perro", "28": "Zamuro",
+      "29": "Elefante", "30": "Caimán", "31": "Lapa", "32": "Ardilla", "33": "Pescado",
+      "34": "Venado", "35": "Jirafa", "36": "Culebra"
+    };
+
+    const ESPEJO_ACUATICO = {
+      "0": "00", "00": "0", "1": "10", "10": "1", "2": "20", "20": "2",
+      "3": "30", "30": "3", "4": "14", "14": "4", "5": "15", "15": "5",
+      "6": "16", "16": "6", "7": "17", "17": "7", "8": "18", "18": "8",
+      "9": "19", "19": "9", "11": "21", "21": "11", "12": "22", "22": "12",
+      "13": "23", "23": "13", "24": "34", "34": "24", "25": "35", "35": "25",
+      "26": "36", "36": "26", "27": "7", "28": "8", "29": "9", "31": "13",
+      "32": "23", "33": "3"
+    };
+
+    const ORDEN_HORAS = [
+      "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM",
+      "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM",
+      "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"
+    ];
+
+    const TODOS_NUMEROS = Object.keys(ANIMALITOS);
+
+    function obtenerFechaVzla() {
+      const ahora = new Date();
+      const vzla = new Date(ahora.getTime() - 4 * 60 * 60 * 1000);
+      return vzla.toISOString().slice(0, 10);
+    }
+
+    function formatearNum(num) {
+      const n = String(num ?? "").trim();
+      return ANIMALITOS[n] ? n : "0";
+    }
+
+    function etiquetaNum(num) {
+      const n = formatearNum(num);
+      return `${n.padStart(2, "0")} ${ANIMALITOS[n]}`;
+    }
+
+    function rutaImagen(num) {
+      const n = formatearNum(num);
+      const archivo = n === "00" ? "00.jpg" : `${n.padStart(2, "0")}.jpg`;
+      return `img/${archivo}`;
+    }
+
+    function extraerSecuencia(mapa = {}, fuente = "LA") {
+      const items = [];
+      for (const hora of ORDEN_HORAS) {
+        const entry = mapa?.[hora];
+        if (entry && entry.numero !== undefined) {
+          const n = formatearNum(entry.numero);
+          items.push({ hora, numero: n, animal: ANIMALITOS[n], fuente });
+        }
+      }
+      return items;
+    }
+
+    function calcularProyecciones(data) {
+      const seqLA = extraerSecuencia(data?.lotto_activo || {}, "Lotto Activo");
+      const seqLG = extraerSecuencia(data?.la_granjita || {}, "La Granjita");
+      const combinada = [...seqLA, ...seqLG];
+
+      if (combinada.length === 0) {
+        return {
+          fijos: {
+            deuda: "13 Mono",
+            simetria: "35 Jirafa",
+            triangulacion: "04 Alacrán",
+            ruptura: "26 Vaca",
+            espejo: "0 Delfín"
+          },
+          cintaTexto: "A la espera de los primeros sorteos del día en Firestore para calcular lectura de cinta y zonas de bloqueo.",
+          datoCaliente: "Esperando primer sorteo registrado del día para activar el dato caliente de la hora.",
+          cierre: "07:00 PM: Sincronizando...",
+          cierreImg: "img/00.jpg"
+        };
+      }
+
+      const salidosSet = new Set(combinada.map(x => x.numero));
+      const conteo = {};
+      for (const item of combinada) {
+        conteo[item.numero] = (conteo[item.numero] || 0) + 1;
+      }
+
+      const candidatosDeuda = TODOS_NUMEROS.filter(n => !salidosSet.has(n));
+      const deudaNum = candidatosDeuda.length > 0
+        ? candidatosDeuda[(combinada.length * 7) % candidatosDeuda.length]
+        : Object.entries(conteo).sort((a, b) => a[1] - b[1])[0][0];
+
+      const primero = combinada[0];
+      const ultimo = combinada[combinada.length - 1];
+      const valA = primero.numero === "00" ? 37 : parseInt(primero.numero, 10);
+      const valB = ultimo.numero === "00" ? 37 : parseInt(ultimo.numero, 10);
+      const simetriaNum = TODOS_NUMEROS[(valA + valB + combinada.length) % TODOS_NUMEROS.length];
+
+      const ultLA = seqLA.length ? seqLA[seqLA.length - 1] : ultimo;
+      const ultLG = seqLG.length ? seqLG[seqLG.length - 1] : primero;
+      const nLA = ultLA.numero === "00" ? 37 : parseInt(ultLA.numero, 10);
+      const nLG = ultLG.numero === "00" ? 37 : parseInt(ultLG.numero, 10);
+      const triangNum = TODOS_NUMEROS[Math.abs(nLA - nLG + combinada.length * 3) % TODOS_NUMEROS.length];
+
+      const ultimosDos = combinada.slice(-2);
+      let rupturaNum;
+      if (ultimosDos.length === 2 && ultimosDos[0].numero.slice(-1) === ultimosDos[1].numero.slice(-1)) {
+        const termRep = ultimosDos[1].numero.slice(-1);
+        rupturaNum = TODOS_NUMEROS.find(n => !n.endsWith(termRep) && n !== ultimo.numero) || "26";
+      } else {
+        rupturaNum = TODOS_NUMEROS[(valB + 11) % TODOS_NUMEROS.length];
+      }
+
+      const espejoNum = ESPEJO_ACUATICO[ultimo.numero] || "0";
+
+      const repetidos = Object.entries(conteo)
+        .filter(([, cant]) => cant > 1)
+        .map(([n, cant]) => `${etiquetaNum(n)} (${cant}x)`);
+
+      const terminales = {};
+      for (const item of combinada) {
+        const t = item.numero.slice(-1);
+        terminales[t] = (terminales[t] || 0) + 1;
+      }
+      const terminalFuerte = Object.entries(terminales).sort((a, b) => b[1] - a[1])[0];
+
+      const cintaTexto = [
+        `Sorteos analizados hoy: ${combinada.length} (${seqLA.length} Lotto Activo / ${seqLG.length} La Granjita).`,
+        `Última lectura en cinta: ${etiquetaNum(ultimo.numero)} (${ultimo.hora} - ${ultimo.fuente}).`,
+        repetidos.length ? `Repeticiones detectadas: ${repetidos.join(", ")}.` : "Sin repeticiones exactas aún en el tramo actual.",
+        terminalFuerte ? `Zona de presión / terminal dominante: ${terminalFuerte[0]} (${terminalFuerte[1]} apariciones).` : ""
+      ].filter(Boolean).join(" ");
+
+      const datoCalienteNum = ESPEJO_ACUATICO[ultimo.numero] || triangNum;
+      const datoCaliente = `Tras ${etiquetaNum(ultimo.numero)} (${ultimo.hora} - ${ultimo.fuente}), la proyección inmediata apunta a ${etiquetaNum(datoCalienteNum)} con respaldo en ${etiquetaNum(deudaNum)}.`;
+
+      const cierreEntry = data?.lotto_activo?.["07:00 PM"] || data?.la_granjita?.["07:00 PM"] || ultimo;
+      const cierreNum = formatearNum(cierreEntry.numero);
+      const cierreTexto = data?.lotto_activo?.["07:00 PM"]
+        ? `Cierre 07:00 PM: ${etiquetaNum(cierreNum)}`
+        : `Último corte (${cierreEntry.hora}): ${etiquetaNum(cierreNum)}`;
+
       return {
         fijos: {
-          deuda: "13 Mono",
-          simetria: "35 Jirafa",
-          triangulacion: "04 Alacrán",
-          ruptura: "26 Vaca",
-          espejo: "0 Delfín"
+          deuda: etiquetaNum(deudaNum),
+          simetria: etiquetaNum(simetriaNum),
+          triangulacion: etiquetaNum(triangNum),
+          ruptura: etiquetaNum(rupturaNum),
+          espejo: etiquetaNum(espejoNum)
         },
-        cintaTexto: "A la espera de los primeros sorteos del día en Firestore para calcular lectura de cinta y zonas de bloqueo.",
-        datoCaliente: "Esperando primer sorteo registrado del día para activar el dato caliente de la hora.",
-        cierre: "07:00 PM: Sincronizando...",
-        cierreImg: "img/00.jpg",
-        resumenSorteos: "Sin sorteos cargados aún para la fecha actual."
+        cintaTexto,
+        datoCaliente,
+        cierre: cierreTexto,
+        cierreImg: rutaImagen(cierreNum)
       };
     }
 
-    const salidosSet = new Set(combinada.map(x => x.numero));
-    const conteo = {};
-    for (const item of combinada) {
-      conteo[item.numero] = (conteo[item.numero] || 0) + 1;
-    }
+    function pintarEnPantalla(res) {
+      document.getElementById("fijo-deuda").textContent = `Pilar Deuda Histórica: ${res.fijos.deuda}`;
+      document.getElementById("fijo-simetria").textContent = `Pilar Vértice Simetría: ${res.fijos.simetria}`;
+      document.getElementById("fijo-triangulacion").textContent = `Triangulación VIP: ${res.fijos.triangulacion}`;
+      document.getElementById("fijo-ruptura").textContent = `Mecánica de Ruptura: ${res.fijos.ruptura}`;
+      document.getElementById("fijo-espejo").textContent = `Espejo Acuático: ${res.fijos.espejo}`;
+      document.getElementById("analisis-cinta").textContent = res.cintaTexto;
+      document.getElementById("dato-caliente").textContent = res.datoCaliente;
+      document.getElementById("cierre-estado").textContent = res.cierre;
 
-    // 1. Pilar Deuda Histórica
-    const candidatosDeuda = TODOS_NUMEROS.filter(n => !salidosSet.has(n));
-    const deudaNum = candidatosDeuda.length > 0
-      ? candidatosDeuda[(combinada.length * 7) % candidatosDeuda.length]
-      : Object.entries(conteo).sort((a, b) => a[1] - b[1])[0][0];
-
-    // 2. Pilar Vértice Simetría
-    const primero = combinada[0];
-    const ultimo = combinada[combinada.length - 1];
-    const valA = primero.numero === "00" ? 37 : parseInt(primero.numero, 10);
-    const valB = ultimo.numero === "00" ? 37 : parseInt(ultimo.numero, 10);
-    const simetriaNum = TODOS_NUMEROS[(valA + valB + combinada.length) % TODOS_NUMEROS.length];
-
-    // 3. Triangulación VIP
-    const ultLA = seqLA.length ? seqLA[seqLA.length - 1] : ultimo;
-    const ultLG = seqLG.length ? seqLG[seqLG.length - 1] : primero;
-    const nLA = ultLA.numero === "00" ? 37 : parseInt(ultLA.numero, 10);
-    const nLG = ultLG.numero === "00" ? 37 : parseInt(ultLG.numero, 10);
-    const triangNum = TODOS_NUMEROS[Math.abs(nLA - nLG + combinada.length * 3) % TODOS_NUMEROS.length];
-
-    // 4. Mecánica de Ruptura
-    const ultimosDos = combinada.slice(-2);
-    let rupturaNum;
-    if (ultimosDos.length === 2 && ultimosDos[0].numero.slice(-1) === ultimosDos[1].numero.slice(-1)) {
-      const termRep = ultimosDos[1].numero.slice(-1);
-      rupturaNum = TODOS_NUMEROS.find(n => !n.endsWith(termRep) && n !== ultimo.numero) || "26";
-    } else {
-      rupturaNum = TODOS_NUMEROS[(valB + 11) % TODOS_NUMEROS.length];
-    }
-
-    // 5. Espejo Acuático
-    const espejoNum = ESPEJO_ACUATICO[ultimo.numero] || "0";
-
-    // Análisis de cinta y detección de bloqueos
-    const repetidos = Object.entries(conteo)
-      .filter(([, cant]) => cant > 1)
-      .map(([n, cant]) => `${etiquetaNum(n)} (${cant}x)`);
-
-    const terminales = {};
-    for (const item of combinada) {
-      const t = item.numero.slice(-1);
-      terminales[t] = (terminales[t] || 0) + 1;
-    }
-    const terminalFuerte = Object.entries(terminales).sort((a, b) => b[1] - a[1])[0];
-
-    const cintaTexto = [
-      `Sorteos analizados hoy: ${combinada.length} (${seqLA.length} Lotto Activo / ${seqLG.length} La Granjita).`,
-      `Última lectura en cinta: ${etiquetaNum(ultimo.numero)} (${ultimo.hora} - ${ultimo.fuente}).`,
-      repetidos.length ? `Repeticiones detectadas: ${repetidos.join(", ")}.` : "Sin repeticiones exactas aún en el tramo actual.",
-      terminalFuerte ? `Zona de presión / terminal dominante: ${terminalFuerte[0]} (${terminalFuerte[1]} apariciones).` : ""
-    ].filter(Boolean).join(" ");
-
-    const datoCalienteNum = ESPEJO_ACUATICO[ultimo.numero] || triangNum;
-    const datoCaliente = `Tras ${etiquetaNum(ultimo.numero)} (${ultimo.hora} - ${ultimo.fuente}), la proyección inmediata apunta a ${etiquetaNum(datoCalienteNum)} con respaldo en ${etiquetaNum(deudaNum)}.`;
-
-    const cierreEntry = data?.lotto_activo?.["07:00 PM"] || data?.la_granjita?.["07:00 PM"] || ultimo;
-    const cierreNum = formatearNum(cierreEntry.numero);
-    const cierreTexto = data?.lotto_activo?.["07:00 PM"]
-      ? `Cierre 07:00 PM: ${etiquetaNum(cierreNum)}`
-      : `Último corte (${cierreEntry.hora}): ${etiquetaNum(cierreNum)}`;
-
-    const resumenSorteos = combinada
-      .slice(-6)
-      .map(x => `${x.hora} [${x.fuente === "Lotto Activo" ? "LA" : "LG"}]: ${etiquetaNum(x.numero)}`)
-      .join(" • ");
-
-    return {
-      fijos: {
-        deuda: etiquetaNum(deudaNum),
-        simetria: etiquetaNum(simetriaNum),
-        triangulacion: etiquetaNum(triangNum),
-        ruptura: etiquetaNum(rupturaNum),
-        espejo: etiquetaNum(espejoNum)
-      },
-      cintaTexto,
-      datoCaliente,
-      cierre: cierreTexto,
-      cierreImg: rutaImagen(cierreNum),
-      resumenSorteos
-    };
-  }
-
-  function pintarEnPantalla(res) {
-    document.querySelectorAll("li, p, div, span, em, strong").forEach(el => {
-      if (el.children.length > 0) return;
-      const txt = el.textContent.trim();
-      if (txt.startsWith("Pilar Deuda Histórica:")) el.textContent = `Pilar Deuda Histórica: ${res.fijos.deuda}`;
-      else if (txt.startsWith("Pilar Vértice Simetría:")) el.textContent = `Pilar Vértice Simetría: ${res.fijos.simetria}`;
-      else if (txt.startsWith("Triangulación VIP:")) el.textContent = `Triangulación VIP: ${res.fijos.triangulacion}`;
-      else if (txt.startsWith("Mecánica de Ruptura:")) el.textContent = `Mecánica de Ruptura: ${res.fijos.ruptura}`;
-      else if (txt.startsWith("Espejo Acuático:")) el.textContent = `Espejo Acuático: ${res.fijos.espejo}`;
-      else if (txt.includes("Sincronizando datos de Lotto Activo") || txt.includes("Sorteos analizados hoy:")) {
-        el.textContent = res.cintaTexto;
-      } else if (txt.includes("Sincronizando último sorteo") || txt.includes("la proyección inmediata apunta a")) {
-        el.textContent = res.datoCaliente;
-      } else if (txt.startsWith("Cierre 07:00 PM:") || txt.startsWith("Último corte (")) {
-        el.textContent = res.cierre;
+      const imgs = document.querySelectorAll("img");
+      if (imgs.length > 1) {
+        imgs[1].src = res.cierreImg;
       }
+    }
+
+    document.querySelectorAll(".bottom-nav button[data-target]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const target = document.getElementById(btn.dataset.target);
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      });
     });
 
-    const imgs = document.querySelectorAll("img");
-    if (imgs.length > 1) {
-      imgs[1].src = res.cierreImg;
-    }
-  }
+    const fechaDoc = obtenerFechaVzla();
+    const docRef = doc(db, "resultados_diarios", fechaDoc);
 
-  function activarNavegacionPanel() {
-    const botones = document.querySelectorAll("button, a");
-    botones.forEach(btn => {
-      const label = btn.textContent.trim();
-      if (label.includes("Pronóstico de Hoy")) {
-        btn.addEventListener("click", (e) => {
-          const sec = Array.from(document.querySelectorAll("h1, h2, h3, div, section")).find(el => el.textContent.includes("Los 5 Fijos de Hoy"));
-          if (sec) { e.preventDefault(); sec.scrollIntoView({ behavior: "smooth", block: "center" }); }
-        });
-      } else if (label.includes("Análisis Técnico")) {
-        btn.addEventListener("click", (e) => {
-          const sec = Array.from(document.querySelectorAll("h1, h2, h3, div, section")).find(el => el.textContent.includes("Análisis de Cinta"));
-          if (sec) { e.preventDefault(); sec.scrollIntoView({ behavior: "smooth", block: "center" }); }
-        });
-      } else if (label.includes("El Dato del Auditor")) {
-        btn.addEventListener("click", (e) => {
-          const sec = Array.from(document.querySelectorAll("h1, h2, h3, div, section")).find(el => el.textContent.includes("Dato Caliente de la Hora"));
-          if (sec) { e.preventDefault(); sec.scrollIntoView({ behavior: "smooth", block: "center" }); }
-        });
-      } else if (label.includes("Más Información")) {
-        btn.addEventListener("click", (e) => {
-          const sec = Array.from(document.querySelectorAll("h1, h2, h3, div, section")).find(el => el.textContent.includes("Más Información"));
-          if (sec) { e.preventDefault(); sec.scrollIntoView({ behavior: "smooth", block: "center" }); }
-        });
-      }
+    getDoc(docRef).then((snap) => {
+      pintarEnPantalla(calcularProyecciones(snap.exists() ? snap.data() : {}));
+    }).catch(() => {});
+
+    onSnapshot(docRef, (snap) => {
+      const data = snap.exists() ? snap.data() : {};
+      pintarEnPantalla(calcularProyecciones(data));
+    }, (err) => {
+      console.error("Error leyendo Firestore:", err);
     });
-  }
-
-  const fechaDoc = obtenerFechaVzla();
-  const docRef = doc(db, "resultados_diarios", fechaDoc);
-
-  activarNavegacionPanel();
-
-  getDoc(docRef).then((snap) => {
-    pintarEnPantalla(calcularProyecciones(snap.exists() ? snap.data() : {}));
-  }).catch(() => {});
-
-  onSnapshot(docRef, (snap) => {
-    const data = snap.exists() ? snap.data() : {};
-    pintarEnPantalla(calcularProyecciones(data));
-  }, (err) => {
-    console.error("Error leyendo Firestore:", err);
-  });
-</script>
+  </script>
+</body>
+</html>
