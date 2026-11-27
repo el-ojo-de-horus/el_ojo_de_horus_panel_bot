@@ -22,9 +22,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install firebase-admin requests beautifulsoup4
 
-      - name: Ejecutar Cerebro
+      - name: Preparar credenciales de Firebase
         env:
           FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           echo "$FIREBASE_CREDENTIALS" > firebase-credentials.json
-          python cerebro.py
+
+      - name: Actualizar Resultados en Firestore
+        run: python actualizar_resultados.py
+
+      - name: Ejecutar Cerebro
+        run: python cerebro.py
