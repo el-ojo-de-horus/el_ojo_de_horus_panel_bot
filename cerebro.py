@@ -65,6 +65,13 @@ TERMINALES = {
     9: ["9", "19", "29"],
 }
 
+ORDEN_CLAVES_ANIMALITOS = [
+    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+    "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
+    "21", "22", "23", "24", "25", "26", "27", "28", "29", "30",
+    "31", "32", "33", "34", "35", "36", "0", "00"
+]
+
 
 def fecha_vzla() -> datetime.date:
     return datetime.datetime.now(VZLA_TZ).date()
@@ -206,6 +213,28 @@ def analizar_cinta_dia(data_hoy: dict):
     return saturadas, triangulaciones
 
 
+def seleccionar_clave_unica(candidatas, usados: set, respaldo_pool: list) -> str:
+    """Devuelve la primera clave normalizada válida no repetida en `usados`."""
+    for raw in candidatas:
+        clave = normalizar_clave_animal(raw)
+        if clave in ANIMALITOS and clave not in usados:
+            usados.add(clave)
+            return clave
+
+    for raw in respaldo_pool:
+        clave = normalizar_clave_animal(raw)
+        if clave in ANIMALITOS and clave not in usados:
+            usados.add(clave)
+            return clave
+
+    for clave in ORDEN_CLAVES_ANIMALITOS:
+        if clave not in usados:
+            usados.add(clave)
+            return clave
+
+    return normalizar_clave_animal(candidatas[0]) if candidatas else "0"
+
+
 def generar_proyeccion():
     hoy = fecha_vzla()
     manana = hoy + datetime.timedelta(days=1)
@@ -226,37 +255,47 @@ def generar_proyeccion():
     historico = obtener_historico_reciente(hoy, dias=7)
     ultimo_cierre = obtener_ultimo_cierre(data_hoy)
 
+    pool_respaldo = sorted(
+        ORDEN_CLAVES_ANIMALITOS,
+        key=lambda n: (historico.get(n, 0), ORDEN_CLAVES_ANIMALITOS.index(n))
+    )
+    usados = set()
     fijos_raw = {}
 
     # 1. Deuda histórica dentro del universo
     cand_deuda = sorted(universo_nums, key=lambda n: historico.get(n, 0))
-    fijos_raw["Deuda_Historica"] = cand_deuda[0]
+    fijos_raw["Deuda_Historica"] = seleccionar_clave_unica(cand_deuda, usados, pool_respaldo)
 
     # 2. Vértice simetría
-    fijos_raw["Vertice_Simetria"] = TERMINALES[vertice][1 if len(TERMINALES[vertice]) > 1 else 0]
+    cand_simetria = list(TERMINALES[vertice][1:]) + list(TERMINALES[vertice][:1])
+    fijos_raw["Vertice_Simetria"] = seleccionar_clave_unica(cand_simetria, usados, pool_respaldo)
 
     # 3. Triangulación VIP
     if triangulaciones:
-        fijos_raw["Triangulacion_VIP"] = triangulaciones[0]
+        cand_triangulacion = list(triangulaciones) + list(TERMINALES[bases[0]])
     else:
-        fijos_raw["Triangulacion_VIP"] = TERMINALES[bases[0]][0]
+        cand_triangulacion = list(TERMINALES[bases[0]])
+    fijos_raw["Triangulacion_VIP"] = seleccionar_clave_unica(cand_triangulacion, usados, pool_respaldo)
 
     # 4. Mecánica de ruptura
     if saturadas:
         t_sat = saturadas[0]
         t_op = (t_sat + 5) % 10
-        fijos_raw["Mecanica_Ruptura"] = TERMINALES[t_op][2 if len(TERMINALES[t_op]) > 2 else 0]
+        cand_ruptura = list(TERMINALES[t_op][2:]) + list(TERMINALES[t_op][:2])
     else:
         t_op_v = (vertice + 5) % 10
-        fijos_raw["Mecanica_Ruptura"] = TERMINALES[t_op_v][0]
+        cand_ruptura = list(TERMINALES[t_op_v])
+    fijos_raw["Mecanica_Ruptura"] = seleccionar_clave_unica(cand_ruptura, usados, pool_respaldo)
 
-    # 5. Espejo acuático (siempre clave válida en ANIMALITOS)
+    # 5. Espejo acuático (siempre clave válida en ANIMALITOS y sin repetir)
     v_clave = normalizar_clave_animal(fijos_raw["Vertice_Simetria"])
     if v_clave in ("0", "10", "20", "30"):
-        fijos_raw["Espejo_Acuario"] = "00" if v_clave != "00" else "0"
+        espejo_primario = "00" if v_clave != "00" else "0"
+        cand_espejo = [espejo_primario, "0", "00"] + list(TERMINALES[0])
     else:
         term_v = int(v_clave[-1])
-        fijos_raw["Espejo_Acuario"] = str(term_v)
+        cand_espejo = [str(term_v)] + list(TERMINALES[term_v])
+    fijos_raw["Espejo_Acuario"] = seleccionar_clave_unica(cand_espejo, usados, pool_respaldo)
 
     fijos_formateados = {
         k: {
