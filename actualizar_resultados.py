@@ -32,6 +32,21 @@ ANIMALITOS = {
     "34": "Venado", "35": "Jirafa", "36": "Culebra"
 }
 
+MESES = {
+    "january": 1, "enero": 1,
+    "february": 2, "febrero": 2,
+    "march": 3, "marzo": 3,
+    "april": 4, "abril": 4,
+    "may": 5, "mayo": 5,
+    "june": 6, "junio": 6,
+    "july": 7, "julio": 7,
+    "august": 8, "agosto": 8,
+    "september": 9, "septiembre": 9,
+    "october": 10, "octubre": 10,
+    "november": 11, "noviembre": 11,
+    "december": 12, "diciembre": 12,
+}
+
 HORAS_SORTEO = [
     "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM",
     "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM",
@@ -48,14 +63,36 @@ HEADERS = {
     "Accept-Language": "es-VE,es;q=0.9,en;q=0.8",
 }
 
+RE_FECHA_LOTOVEN = re.compile(
+    r"\b(\d{1,2})\s+de\s+([A-Za-zÁÉÍÓÚáéíóú]+)\s+de\s+(20\d{2})\b",
+    re.IGNORECASE,
+)
+
+# Captura: <numero 00..36> <texto corto del animal> <hora 08:00 AM .. 07:00 PM>
 RE_SORTEO = re.compile(
-    r"\b(00|[0-3]?\d)\s+([A-Za-zÁÉÍÓÚáéíóúÑñ]+(?:\s+[A-Za-zÁÉÍÓÚáéíóúÑñ]+){0,2})\s+(0?[89]:00\s*AM|1[01]:00\s*AM|12:00\s*PM|0?[1-7]:00\s*PM)\b",
+    r"(?<!\d)(00|[0-3]?\d)\s+([A-Za-zÁÉÍÓÚáéíóúÑñ\s-]{2,25}?)\s+(0?[89]:00\s*AM|1[01]:00\s*AM|12:00\s*PM|0?[1-7]:00\s*PM)\b",
     re.IGNORECASE,
 )
 
 
 def fecha_vzla_str() -> str:
     return datetime.datetime.now(VZLA_TZ).strftime("%Y-%m-%d")
+
+
+def detectar_fecha_en_bloque(bloque: str) -> str | None:
+    m = RE_FECHA_LOTOVEN.search(bloque)
+    if not m:
+        return None
+    dia = int(m.group(1))
+    mes_nombre = m.group(2).lower()
+    anio = int(m.group(3))
+    mes = MESES.get(mes_nombre)
+    if not mes:
+        return None
+    try:
+        return datetime.date(anio, mes, dia).isoformat()
+    except ValueError:
+        return None
 
 
 def normalizar_hora(hora_raw: str) -> str:
@@ -76,10 +113,10 @@ def normalizar_numero(num_raw: str):
     return None
 
 
-def extraer_bloque_ruleta(texto: str, inicio_marcador: str, fin_marcadores: list) -> dict:
+def extraer_bloque_ruleta(texto: str, inicio_marcador: str, fin_marcadores: list):
     idx_inicio = texto.find(inicio_marcador)
     if idx_inicio == -1:
-        return {}
+        return {}, None, ""
 
     subtexto = texto[idx_inicio:]
     corte = len(subtexto)
@@ -89,6 +126,7 @@ def extraer_bloque_ruleta(texto: str, inicio_marcador: str, fin_marcadores: list
             corte = pos
 
     bloque = subtexto[:corte]
+    fecha_bloque = detectar_fecha_en_bloque(bloque)
     resultados = {}
 
     for match in RE_SORTEO.finditer(bloque):
@@ -100,37 +138,44 @@ def extraer_bloque_ruleta(texto: str, inicio_marcador: str, fin_marcadores: list
                 "animal": ANIMALITOS[num],
             }
 
-    return resultados
+    return resultados, fecha_bloque, bloque[:320]
 
 
 def actualizar_resultados():
-    fecha_hoy = fecha_vzla_str()
+    fecha_hoy_vzla = fecha_vzla_str()
     lotto_activo = {}
     la_granjita = {}
+    fecha_publicada = None
 
     try:
         resp = requests.get(URL_LOTOVEN, headers=HEADERS, timeout=25)
         print(f"[LotoVen] {URL_LOTOVEN} -> HTTP {resp.status_code} ({len(resp.text)} bytes)")
         if resp.status_code == 200 and resp.text.strip():
             soup = BeautifulSoup(resp.text, "html.parser")
-            texto_plano = re.sub(r"[ \t]+", " ", soup.get_text(" ", strip=True))
-            texto_plano = re.sub(r"\s+", " ", texto_plano)
+            texto_plano = re.sub(r"\s+", " ", soup.get_text(" ", strip=True))
 
-            lotto_activo = extraer_bloque_ruleta(
+            lotto_activo, fecha_la, muestra_la = extraer_bloque_ruleta(
                 texto_plano,
                 "Resultados Lotto Activo",
                 ["Resultados La Granjita", "Resultados Lotto Activo 2"],
             )
-            la_granjita = extraer_bloque_ruleta(
+            la_granjita, fecha_lg, muestra_lg = extraer_bloque_ruleta(
                 texto_plano,
                 "Resultados La Granjita",
                 ["Resultados Lotto Activo 2", "Resultados Guacharo Activo"],
             )
+            fecha_publicada = fecha_la or fecha_lg
+
+            if not lotto_activo:
+                print(f"[Debug LottoActivo] Muestra texto: {muestra_la}")
+            if not la_granjita:
+                print(f"[Debug LaGranjita] Muestra texto: {muestra_lg}")
     except Exception as exc:
         print(f"[LotoVen] Error consultando {URL_LOTOVEN}: {exc}")
 
-    doc_ref = db.collection(COLECCION_RESULTADOS).document(fecha_hoy)
-    payload = {"fecha": fecha_hoy}
+    fecha_destino = fecha_publicada or fecha_hoy_vzla
+    doc_ref = db.collection(COLECCION_RESULTADOS).document(fecha_destino)
+    payload = {"fecha": fecha_destino}
 
     if lotto_activo:
         payload["lotto_activo"] = lotto_activo
@@ -139,7 +184,7 @@ def actualizar_resultados():
 
     doc_ref.set(payload, merge=True)
 
-    print(f"📅 Fecha Venezuela: {fecha_hoy}")
+    print(f"📅 Fecha reloj Venezuela: {fecha_hoy_vzla} | Fecha publicada LotoVen: {fecha_destino}")
     print(f"🎰 Lotto Activo extraídos: {len(lotto_activo)} -> {lotto_activo}")
     print(f"🐾 La Granjita extraídos: {len(la_granjita)} -> {la_granjita}")
 
