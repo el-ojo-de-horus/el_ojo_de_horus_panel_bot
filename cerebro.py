@@ -1,124 +1,306 @@
+import os
+import json
 import datetime
+from collections import Counter
 import firebase_admin
 from firebase_admin import credentials, firestore
-from collections import Counter
 
 # ─── CONFIGURACIÓN FIREBASE ───
-cred = credentials.Certificate("firebase-credentials.json")
-firebase_admin.initialize_app(cred)
+if not firebase_admin._apps:
+    cred_env = os.environ.get("FIREBASE_CREDENTIALS") or os.environ.get("FIREBASE_SERVICE_ACCOUNT")
+    if cred_env:
+        cred = credentials.Certificate(json.loads(cred_env))
+    elif os.path.exists("firebase-credentials.json"):
+        cred = credentials.Certificate("firebase-credentials.json")
+    else:
+        raise RuntimeError("No se encontraron credenciales de Firebase.")
+    firebase_admin.initialize_app(cred)
+
 db = firestore.client()
+
+VZLA_TZ = datetime.timezone(datetime.timedelta(hours=-4))
+COLECCION_RESULTADOS = "resultados_diarios"
+COLECCION_PROYECCIONES = "proyecciones"
+CARPETA_IMG = "img"
+
+HORAS_ORDENADAS = [
+    "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM",
+    "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM",
+    "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"
+]
+
+DIAS_ES = {
+    0: "Lunes", 1: "Martes", 2: "Miércoles", 3: "Jueves",
+    4: "Viernes", 5: "Sábado", 6: "Domingo"
+}
+
+MESES_ES = {
+    1: "enero", 2: "febrero", 3: "marzo", 4: "abril",
+    5: "mayo", 6: "junio", 7: "julio", 8: "agosto",
+    9: "septiembre", 10: "octubre", 11: "noviembre", 12: "diciembre"
+}
 
 # ─── TABLAS ───
 ANIMALITOS = {
-    "0":"Delfín","00":"Ballena","1":"Carnero","2":"Toro","3":"Ciempiés","4":"Alacrán","5":"León","6":"Rana","7":"Perico","8":"Ratón","9":"Águila","10":"Tigre","11":"Gato","12":"Caballo","13":"Mono","14":"Paloma","15":"Zorro","16":"Oso","17":"Pavo","18":"Burro","19":"Chivo","20":"Cochino","21":"Gallo","22":"Camello","23":"Cebra","24":"Iguana","25":"Gallina","26":"Vaca","27":"Perro","28":"Zamuro","29":"Elefante","30":"Caimán","31":"Lapa","32":"Ardilla","33":"Pescado","34":"Venado","35":"Jirafa","36":"Culebra"
-}
-TERMINALES = {
-    0: ["0", "00", "10", "20", "30"], 1: ["1", "11", "21", "31"], 2: ["2", "12", "22", "32"],
-    3: ["3", "13", "23", "33"], 4: ["4", "14", "24", "34"], 5: ["5", "15", "25", "35"],
-    6: ["6", "16", "26", "36"], 7: ["7", "17", "27"], 8: ["8", "18", "28"], 9: ["9", "19", "29"],
+    "0": "Delfín", "00": "Ballena", "1": "Carnero", "2": "Toro", "3": "Ciempiés",
+    "4": "Alacrán", "5": "León", "6": "Rana", "7": "Perico", "8": "Ratón",
+    "9": "Águila", "10": "Tigre", "11": "Gato", "12": "Caballo", "13": "Mono",
+    "14": "Paloma", "15": "Zorro", "16": "Oso", "17": "Pavo", "18": "Burro",
+    "19": "Chivo", "20": "Cochino", "21": "Gallo", "22": "Camello", "23": "Cebra",
+    "24": "Iguana", "25": "Gallina", "26": "Vaca", "27": "Perro", "28": "Zamuro",
+    "29": "Elefante", "30": "Caimán", "31": "Lapa", "32": "Ardilla", "33": "Pescado",
+    "34": "Venado", "35": "Jirafa", "36": "Culebra"
 }
 
-def calcular_piramide(fecha):
+TERMINALES = {
+    0: ["0", "00", "10", "20", "30"],
+    1: ["1", "11", "21", "31"],
+    2: ["2", "12", "22", "32"],
+    3: ["3", "13", "23", "33"],
+    4: ["4", "14", "24", "34"],
+    5: ["5", "15", "25", "35"],
+    6: ["6", "16", "26", "36"],
+    7: ["7", "17", "27"],
+    8: ["8", "18", "28"],
+    9: ["9", "19", "29"],
+}
+
+
+def fecha_vzla() -> datetime.date:
+    return datetime.datetime.now(VZLA_TZ).date()
+
+
+def formatear_fecha_es(fecha: datetime.date) -> dict:
+    dia_semana = DIAS_ES[fecha.weekday()]
+    mes_nombre = MESES_ES[fecha.month]
+    return {
+        "dia_semana": dia_semana,
+        "dia": fecha.day,
+        "mes_numero": fecha.month,
+        "mes_nombre": mes_nombre,
+        "anio": fecha.year,
+        "texto": f"{dia_semana}, {fecha.day:02d} de {mes_nombre} de {fecha.year}"
+    }
+
+
+def normalizar_clave_animal(num_raw) -> str:
+    s = str(num_raw).strip()
+    if s == "00":
+        return "00"
+    if s.isdigit():
+        val = int(s)
+        if 0 <= val <= 36:
+            return str(val)
+    return s
+
+
+def nombre_animal(num_raw) -> str:
+    clave = normalizar_clave_animal(num_raw)
+    return ANIMALITOS.get(clave, "")
+
+
+def buscar_imagen_animalito(num_raw, carpeta: str = CARPETA_IMG) -> str:
+    """Busca un archivo de imagen en la carpeta img/ acorde al número del animalito."""
+    clave = normalizar_clave_animal(num_raw)
+    candidatos_base = [clave]
+    if clave != "00" and clave.isdigit():
+        candidatos_base.append(clave.zfill(2))
+
+    extensiones = (".png", ".jpg", ".jpeg", ".webp", ".gif")
+
+    if os.path.isdir(carpeta):
+        archivos = sorted(os.listdir(carpeta))
+        for base in candidatos_base:
+            for ext in extensiones:
+                candidato = f"{base}{ext}"
+                if candidato in archivos:
+                    return f"{carpeta}/{candidato}"
+
+        for base in candidatos_base:
+            for arch in archivos:
+                bajo = arch.lower()
+                if bajo.endswith(extensiones) and (
+                    bajo.startswith(f"{base.lower()}_")
+                    or bajo.startswith(f"{base.lower()}-")
+                    or bajo.startswith(f"{base.lower()}.")
+                ):
+                    return f"{carpeta}/{arch}"
+
+    pad = clave if clave == "00" else clave.zfill(2)
+    return f"{carpeta}/{pad}.png"
+
+
+def obtener_ultimo_cierre(data_hoy: dict) -> dict:
+    """Obtiene el último animalito sorteado en el día (priorizando Lotto Activo y luego La Granjita)."""
+    for op in ("lotto_activo", "la_granjita"):
+        bloque = data_hoy.get(op)
+        if isinstance(bloque, dict):
+            for hora in reversed(HORAS_ORDENADAS):
+                entry = bloque.get(hora)
+                if isinstance(entry, dict) and entry.get("numero") is not None:
+                    num = normalizar_clave_animal(entry["numero"])
+                    animal = nombre_animal(num) or entry.get("animal", "")
+                    return {
+                        "fuente": op,
+                        "hora": hora,
+                        "numero": num,
+                        "animal": animal,
+                        "imagen": buscar_imagen_animalito(num),
+                    }
+    return {
+        "fuente": "",
+        "hora": "",
+        "numero": "",
+        "animal": "",
+        "imagen": buscar_imagen_animalito("0"),
+    }
+
+
+def calcular_piramide(fecha: datetime.date):
     fila = [int(c) for c in fecha.strftime("%d%m%Y")]
+    bases = (0, 0)
     while len(fila) > 1:
-        fila = [(fila[i] + fila[i+1]) % 10 for i in range(len(fila) - 1)]
-        if len(fila) == 2: bases = tuple(fila)
+        fila = [(fila[i] + fila[i + 1]) % 10 for i in range(len(fila) - 1)]
+        if len(fila) == 2:
+            bases = (fila[0], fila[1])
     return fila[0], bases
 
-def obtener_historico_reciente(dias=7):
-    """Lee los últimos N días para calcular la deuda real."""
-    hoy = datetime.date.today()
+
+def obtener_historico_reciente(fecha_base: datetime.date, dias: int = 7) -> Counter:
     apariciones = Counter()
     for i in range(1, dias + 1):
-        fecha_str = (hoy - datetime.timedelta(days=i)).isoformat()
-        doc = db.collection('resultados').document(fecha_str).get()
+        fecha_str = (fecha_base - datetime.timedelta(days=i)).isoformat()
+        doc = db.collection(COLECCION_RESULTADOS).document(fecha_str).get()
         if doc.exists:
-            data = doc.to_dict()
-            for op in ['lotto_activo', 'la_granjita']:
-                if op in data:
-                    for hora, entry in data[op].items():
-                        if 'numero' in entry:
-                            apariciones[str(entry['numero'])] += 1
+            data = doc.to_dict() or {}
+            for op in ("lotto_activo", "la_granjita"):
+                if isinstance(data.get(op), dict):
+                    for _, entry in data[op].items():
+                        if isinstance(entry, dict) and "numero" in entry:
+                            apariciones[normalizar_clave_animal(entry["numero"])] += 1
     return apariciones
 
-def analizar_cinta_hoy():
-    """Analiza los resultados de HOY para la ruptura de MAÑANA."""
-    hoy = datetime.date.today().isoformat()
-    doc = db.collection('resultados').document(hoy).get()
-    if not doc.exists: return [], []
-    
-    data = doc.to_dict()
+
+def analizar_cinta_dia(data_hoy: dict):
+    if not data_hoy:
+        return [], []
+
     todos = []
-    for op in ['lotto_activo', 'la_granjita']:
-        if op in data:
-            for h, entry in data[op].items():
-                if 'numero' in entry: todos.append(str(entry['numero']))
-    
-    conteo_term = Counter([int(n[-1]) for n in todos])
+    for op in ("lotto_activo", "la_granjita"):
+        if isinstance(data_hoy.get(op), dict):
+            for _, entry in data_hoy[op].items():
+                if isinstance(entry, dict) and "numero" in entry:
+                    todos.append(normalizar_clave_animal(entry["numero"]))
+
+    conteo_term = Counter([int(n[-1]) for n in todos if n and n[-1].isdigit()])
     saturadas = [t for t, c in conteo_term.items() if c >= 4]
-    
+
     triangulaciones = []
-    if "12" in todos and "18" in todos: triangulaciones.append("23")
-    if "0" in todos and "33" in todos: triangulaciones.append("00")
-    if "11" in todos and "27" in todos: triangulaciones.append("05")
-    
+    if "12" in todos and "18" in todos:
+        triangulaciones.append("23")
+    if "0" in todos and "33" in todos:
+        triangulaciones.append("00")
+    if "11" in todos and "27" in todos:
+        triangulaciones.append("5")
+
     return saturadas, triangulaciones
 
+
 def generar_proyeccion():
-    hoy = datetime.date.today()
+    hoy = fecha_vzla()
     manana = hoy + datetime.timedelta(days=1)
-    
-    # 1. Datos Base
+
+    hoy_str = hoy.isoformat()
+    manana_str = manana.isoformat()
+    fecha_info = formatear_fecha_es(manana)
+
+    doc_hoy = db.collection(COLECCION_RESULTADOS).document(hoy_str).get()
+    data_hoy = doc_hoy.to_dict() if doc_hoy.exists else {}
+
+    # Pirámide y proyección para MAÑANA a partir del cierre de HOY
     vertice, bases = calcular_piramide(manana)
     universo_term = list(set([vertice] + list(bases)))
     universo_nums = [n for t in universo_term for n in TERMINALES[t]]
-    
-    saturadas, triangulaciones = analizar_cinta_hoy()
-    historico = obtener_historico_reciente()
 
-    fijos = {}
+    saturadas, triangulaciones = analizar_cinta_dia(data_hoy)
+    historico = obtener_historico_reciente(hoy, dias=7)
+    ultimo_cierre = obtener_ultimo_cierre(data_hoy)
 
-    # PILAR 1: DEUDA HISTÓRICA (El que menos ha salido en 7 días DENTRO del universo)
+    fijos_raw = {}
+
+    # 1. Deuda histórica dentro del universo
     cand_deuda = sorted(universo_nums, key=lambda n: historico.get(n, 0))
-    fijos["Deuda_Historica"] = cand_deuda[0]
+    fijos_raw["Deuda_Historica"] = cand_deuda[0]
 
-    # PILAR 2: VÉRTICE (Un número de la terminal del vértice)
-    fijos["Vertice_Simetria"] = TERMINALES[vertice][1] # Tomamos el segundo de la familia para variar
+    # 2. Vértice simetría
+    fijos_raw["Vertice_Simetria"] = TERMINALES[vertice][1 if len(TERMINALES[vertice]) > 1 else 0]
 
-    # PILAR 3: TRIANGULACIÓN VIP
+    # 3. Triangulación VIP
     if triangulaciones:
-        fijos["Triangulacion_VIP"] = triangulaciones[0]
+        fijos_raw["Triangulacion_VIP"] = triangulaciones[0]
     else:
-        fijos["Triangulacion_VIP"] = TERMINALES[bases[0]][0]
+        fijos_raw["Triangulacion_VIP"] = TERMINALES[bases[0]][0]
 
-    # PILAR 4: RUPTURA (Opuesto de la terminal más saturada)
+    # 4. Mecánica de ruptura
     if saturadas:
         t_sat = saturadas[0]
         t_op = (t_sat + 5) % 10
-        fijos["Mecanica_Ruptura"] = TERMINALES[t_op][2] # Tercero de la familia
+        fijos_raw["Mecanica_Ruptura"] = TERMINALES[t_op][2 if len(TERMINALES[t_op]) > 2 else 0]
     else:
-        fijos["Mecanica_Ruptura"] = TERMINALES[(vertice + 5) % 10][0]
+        t_op_v = (vertice + 5) % 10
+        fijos_raw["Mecanica_Ruptura"] = TERMINALES[t_op_v][0]
 
-    # PILAR 5: ESPEJO ACUÁTICO
-    v_str = str(fijos["Vertice_Simetria"])
-    fijos["Espejo_Acuario"] = "00" if v_str in ["0", "10", "20"] else f"0{v_str[-1]}"
+    # 5. Espejo acuático (siempre clave válida en ANIMALITOS)
+    v_clave = normalizar_clave_animal(fijos_raw["Vertice_Simetria"])
+    if v_clave in ("0", "10", "20", "30"):
+        fijos_raw["Espejo_Acuario"] = "00" if v_clave != "00" else "0"
+    else:
+        term_v = int(v_clave[-1])
+        fijos_raw["Espejo_Acuario"] = str(term_v)
 
-    # TRIPLETAS (Agrupando familias de los 3 fijos principales)
-    t1 = int(fijos["Triangulacion_VIP"][-1])
-    t2 = int(fijos["Mecanica_Ruptura"][-1])
-    t3 = int(fijos["Vertice_Simetria"][-1])
+    fijos_formateados = {
+        k: {
+            "numero": normalizar_clave_animal(v),
+            "animal": nombre_animal(v)
+        }
+        for k, v in fijos_raw.items()
+    }
+
+    resumen_5_fijos = [
+        f"{item['numero'].zfill(2) if item['numero'] != '00' else '00'} {item['animal']}"
+        for item in fijos_formateados.values()
+    ]
+
+    # Tripletas
+    t1 = int(str(fijos_raw["Triangulacion_VIP"])[-1])
+    t2 = int(str(fijos_raw["Mecanica_Ruptura"])[-1])
+    t3 = int(str(fijos_raw["Vertice_Simetria"])[-1])
     tripletas = [TERMINALES[t1][:3], TERMINALES[t2][:3], TERMINALES[t3][:3]]
 
     proyeccion = {
-        "fecha_proyeccion": manana.isoformat(),
+        "fecha_base": hoy_str,
+        "fecha_proyeccion": manana_str,
+        "fecha_legible": fecha_info["texto"],
+        "fecha_desglose": {
+            "dia": fecha_info["dia"],
+            "mes": fecha_info["mes_nombre"],
+            "mes_numero": fecha_info["mes_numero"],
+            "anio": fecha_info["anio"],
+        },
         "piramide": {"vertice": vertice, "bases": list(bases)},
         "saturadas": saturadas,
-        "fijos": {k: {"numero": v, "animal": ANIMALITOS.get(v, "")} for k, v in fijos.items()},
+        "ultimo_cierre": ultimo_cierre,
+        "imagen_cierre": ultimo_cierre["imagen"],
+        "fijos": fijos_formateados,
+        "resumen_5_fijos": resumen_5_fijos,
         "tripletas": tripletas
     }
-    
-    db.collection('proyecciones').document(manana.isoformat()).set(proyeccion)
-    print(f"✅ Cerebro ejecutado. Proyección para {manana.isoformat()} guardada.")
+
+    db.collection(COLECCION_PROYECCIONES).document(manana_str).set(proyeccion, merge=True)
+    print(f"✅ Cerebro ejecutado. Base {hoy_str} -> Proyección para {fecha_info['texto']} ({manana_str}).")
+    print(f"🎯 Los 5 fijos: {' | '.join(resumen_5_fijos)}")
+    print(f"🖼️ Último cierre: {ultimo_cierre['numero']} {ultimo_cierre['animal']} ({ultimo_cierre['hora']}) -> {ultimo_cierre['imagen']}")
+
 
 if __name__ == "__main__":
     generar_proyeccion()
