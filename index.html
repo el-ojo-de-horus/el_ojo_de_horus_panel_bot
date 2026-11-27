@@ -10,7 +10,7 @@
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      padding: 16px 16px 145px 16px;
+      padding: 14px 14px 125px 14px;
       background-color: #0f172a;
       font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
       color: #1e293b;
@@ -22,6 +22,41 @@
       margin: 0 auto;
     }
 
+    /* PANTALLA INICIAL CON TU LOGO */
+    .bienvenida-box {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 36px 20px;
+      text-align: center;
+      color: #f8fafc;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+      animation: fadeIn 0.25s ease-out;
+    }
+    .bienvenida-logo {
+      width: 140px;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 50%;
+      margin: 0 auto 16px auto;
+      display: block;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+    }
+    .bienvenida-titulo {
+      font-size: 22px;
+      font-weight: 900;
+      margin: 0 0 10px 0;
+      color: #ffeb3b;
+    }
+    .bienvenida-texto {
+      margin: 0 auto;
+      max-width: 440px;
+      font-size: 15px;
+      line-height: 1.55;
+      color: #cbd5e1;
+    }
+
+    /* CONTROL DE VISIBILIDAD DE SECCIONES */
     .vista-seccion {
       display: none;
       animation: fadeIn 0.25s ease-out;
@@ -35,7 +70,7 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* 1. PRONÓSTICO (5 FIJOS + FECHA + CIERRE) */
+    /* 1. PRONÓSTICO DE HOY */
     .proyeccion-box {
       background: #ffffff;
       border-radius: 16px;
@@ -47,54 +82,27 @@
       background: #1a1a1a;
       color: #ffeb3b;
       text-align: center;
-      padding: 20px 16px;
-      font-size: 19px;
+      padding: 14px 12px;
+      font-size: 16px;
       font-weight: 900;
       text-transform: uppercase;
-      letter-spacing: 0.8px;
+      letter-spacing: 0.6px;
+      line-height: 1.3;
     }
-    .proyeccion-header img.img-cierre-animal {
-      max-width: 140px;
+    .proyeccion-header img {
+      max-width: 240px;
       width: 100%;
       height: auto;
-      border-radius: 12px;
-      margin: 12px auto 8px auto;
+      border-radius: 10px;
+      margin: 0 auto 10px auto;
       display: block;
-      border: 2px solid #ffeb3b;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
-    }
-    .fecha-proyeccion-badge {
-      display: inline-block;
-      margin-top: 8px;
-      background: #273549;
-      color: #f8fafc;
-      font-size: 13px;
-      font-weight: 700;
-      text-transform: none;
-      letter-spacing: 0.2px;
-      padding: 6px 12px;
-      border-radius: 999px;
-    }
-    .cierre-subtexto {
-      font-size: 13px;
-      font-weight: 600;
-      color: #e2e8f0;
-      text-transform: none;
-      letter-spacing: 0.2px;
-      margin-top: 4px;
-    }
-    .estado-espera-box {
-      padding: 36px 20px;
-      text-align: center;
-      color: #475569;
-      font-size: 15px;
-      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     }
     .proyeccion-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 15px 20px;
+      padding: 11px 16px;
       border-bottom: 1px solid #eeeeee;
       transition: background-color 0.15s ease;
     }
@@ -107,16 +115,17 @@
     .tipo {
       font-weight: 700;
       color: #475569;
-      font-size: 15px;
+      font-size: 14px;
     }
     .animalito {
       font-weight: 900;
-      font-size: 16px;
-      padding: 7px 15px;
+      font-size: 15px;
+      padding: 5px 13px;
       border-radius: 10px;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
       color: #ffffff;
       letter-spacing: 0.3px;
+      white-space: nowrap;
     }
     .c1 { background: #E65100; }
     .c2 { background: #0288D1; }
@@ -172,44 +181,218 @@
       color: #334155;
     }
 
-    /* 4. MÁS INFORMACIÓN */
-    .seccion-info {
-      background: #ffffff;
+    /* 4. MÁS INFORMACIÓN (VIP + DISCLAIMER TÉCNICO) */
+    .seccion-vip-banner {
+      background: #141c2f;
+      border: 1px solid #2a3752;
       border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
-      padding: 22px;
-      font-size: 15px;
-      line-height: 1.65;
-      border: 1px solid #e2e8f0;
+      padding: 26px 18px 22px 18px;
+      text-align: center;
+      color: #ffffff;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
     }
-    .seccion-info h2 {
-      margin-top: 0;
-      margin-bottom: 12px;
-      color: #1a1a1a;
-      font-size: 20px;
-      font-weight: 800;
-      border-bottom: 3px solid #ffeb3b;
-      padding-bottom: 8px;
+    .vip-titulo-principal {
+      font-size: 21px;
+      font-weight: 900;
+      line-height: 1.25;
+      margin: 0 0 10px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
     }
-    .btn-tg {
-      display: inline-flex;
+    .vip-subtitulo {
+      font-size: 14px;
+      color: #cbd5e1;
+      line-height: 1.5;
+      max-width: 420px;
+      margin: 0 auto 20px auto;
+    }
+    .vip-card-destacada {
+      background: linear-gradient(180deg, rgba(120, 78, 18, 0.42) 0%, rgba(56, 37, 12, 0.48) 100%);
+      border: 1px solid #6b4c1e;
+      border-radius: 14px;
+      padding: 24px 16px;
+      max-width: 440px;
+      margin: 0 auto;
+    }
+    .vip-diamante-circulo {
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      background: rgba(146, 98, 24, 0.45);
+      border: 1px solid rgba(250, 204, 21, 0.35);
+      display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      margin-top: 14px;
-      background: #0088cc;
-      color: #ffffff;
-      text-decoration: none;
+      font-size: 30px;
+      margin: 0 auto 14px auto;
+    }
+    .vip-card-titulo {
+      color: #facc15;
+      font-size: 19px;
+      font-weight: 800;
+      margin: 0 0 8px 0;
+    }
+    .vip-card-desc {
+      color: #cbd5e1;
+      font-size: 13.5px;
+      line-height: 1.45;
+      margin: 0 0 18px 0;
+    }
+    .btn-ver-planes {
+      background: rgba(146, 98, 24, 0.55);
+      color: #fde047;
+      border: 1px solid #926218;
+      border-radius: 999px;
+      padding: 10px 26px;
+      font-size: 14px;
       font-weight: 700;
-      padding: 12px 20px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-ver-planes:hover {
+      background: #ca8a04;
+      color: #111827;
+    }
+    .disclaimer-tecnico {
+      margin: 18px auto 0 auto;
+      max-width: 440px;
+      padding-top: 14px;
+      border-top: 1px solid #2a3752;
+      font-size: 11.5px;
+      line-height: 1.5;
+      color: #94a3b8;
+      text-align: center;
+    }
+
+    /* MODAL DE PLANES V.I.P */
+    .modal-vip-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(9, 13, 22, 0.88);
+      z-index: 200;
+      overflow-y: auto;
+      padding: 16px 12px 32px 12px;
+      animation: fadeIn 0.2s ease-out;
+    }
+    .modal-vip-overlay.abierto {
+      display: block;
+    }
+    .modal-vip-contenedor {
+      max-width: 440px;
+      margin: 0 auto;
+      background: #141c2f;
+      border: 1px solid #2a3752;
+      border-radius: 18px;
+      padding: 18px 14px 20px 14px;
+      color: #ffffff;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.65);
+    }
+    .modal-vip-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .modal-vip-titulo {
+      font-size: 18px;
+      font-weight: 900;
+      color: #fde047;
+      margin: 0 auto;
+    }
+    .btn-cerrar-modal {
+      background: #273549;
+      color: #cbd5e1;
+      border: 1px solid #475569;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .plan-item-card {
+      background: #1b253b;
+      border: 1px solid #2e3d5c;
+      border-radius: 14px;
+      padding: 16px 14px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .plan-item-card.premium {
+      border: 1.5px solid #eab308;
+      box-shadow: 0 0 18px rgba(234, 179, 8, 0.15);
+    }
+    .plan-nombre {
+      font-size: 16px;
+      font-weight: 900;
+      color: #ffffff;
+      margin: 0 0 2px 0;
+      text-transform: uppercase;
+    }
+    .plan-item-card.premium .plan-nombre {
+      color: #facc15;
+    }
+    .plan-duracion {
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+    }
+    .plan-precio {
+      font-size: 26px;
+      font-weight: 900;
+      color: #fde047;
+      margin-bottom: 10px;
+    }
+    .plan-precio span {
+      font-size: 14px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+    .plan-lista {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 14px 0;
+      text-align: left;
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: #e2e8f0;
+    }
+    .plan-lista li {
+      margin-bottom: 4px;
+    }
+    .btn-wa-plan {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      background: #25d366;
+      color: #0b141a;
+      font-weight: 800;
+      font-size: 13.5px;
+      padding: 10px 14px;
       border-radius: 10px;
+      text-decoration: none;
       transition: background-color 0.2s ease, transform 0.1s ease;
     }
-    .btn-tg:hover {
-      background: #0077b3;
+    .btn-wa-plan:hover {
+      background: #20bd5a;
     }
-    .btn-tg:active {
+    .btn-wa-plan:active {
       transform: scale(0.98);
+    }
+    .modal-vip-nota {
+      font-size: 11.5px;
+      color: #94a3b8;
+      text-align: center;
+      line-height: 1.45;
+      margin: 8px 0 0 0;
     }
 
     /* BARRA DE BOTONES FIJA ABAJO */
@@ -222,9 +405,9 @@
       margin: 0 auto;
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
+      gap: 8px;
       background: #1e293b;
-      padding: 12px;
+      padding: 10px;
       border-radius: 16px 16px 0 0;
       border-top: 1px solid #334155;
       box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.5);
@@ -234,19 +417,23 @@
       background: #273549;
       color: #f8fafc;
       border: 1px solid #475569;
-      border-radius: 12px;
-      padding: 13px 12px;
-      font-size: 14px;
+      border-radius: 10px;
+      padding: 10px 8px;
+      font-size: 12.5px;
       font-weight: 700;
       cursor: pointer;
       text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       transition: all 0.2s ease;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
     }
     @media (min-width: 640px) {
       .btn-tab {
-        font-size: 15px;
+        font-size: 14.5px;
+        padding: 12px;
       }
     }
     .btn-tab:hover {
@@ -263,47 +450,54 @@
 <body>
   <div class="contenedor-bot">
 
-    <!-- SECCIÓN 1: PRONÓSTICO (SE MUESTRA AL PULSAR EL BOTÓN) -->
+    <!-- PANTALLA INICIAL CON TU LOGO -->
+    <section id="vistaBienvenida" class="bienvenida-box">
+      <img
+        src="img/logo.jpg"
+        alt="Logo El Ojo De Horus"
+        class="bienvenida-logo"
+        onerror="this.onerror=null;this.src='img/0.png';"
+      />
+      <h1 class="bienvenida-titulo">👑 El Ojo De Horus 🔥</h1>
+      <p class="bienvenida-texto">
+        Selecciona una opción en el panel inferior para consultar los datos disponibles.
+      </p>
+    </section>
+
+    <!-- SECCIÓN 1: PRONÓSTICO -->
     <section id="vistaPronostico" class="vista-seccion">
       <div class="proyeccion-box">
         <div class="proyeccion-header">
-          <span id="tituloPronostico">📊 LOS 5 FIJOS</span><br />
-          <span id="fechaProyeccionTexto" class="fecha-proyeccion-badge">Día • Mes • Año</span>
-          <img
-            id="imgUltimoCierre"
-            class="img-cierre-animal"
-            alt="Último animalito de cierre"
-            src="img/0.png"
-            onerror="this.onerror=null;this.src='https://placehold.co/240x240/1a1a1a/ffeb3b?text=Cierre';"
-          />
-          <div id="textoUltimoCierre" class="cierre-subtexto">Último cierre: esperando pulso del botón</div>
+          <div>
+            <img
+              id="imgPortadaCierre"
+              alt="Imagen de cierre"
+              src="img/logo.jpg"
+              onerror="this.onerror=null;this.src='img/logo.jpg';"
+            />
+          </div>
+          <span id="tituloPronostico">📊 LOS 5 FIJOS</span>
         </div>
 
-        <div id="avisoSinActivar" class="estado-espera-box">
-          Pulsa <strong>🔮 Pronóstico de Hoy</strong> para cargar la fecha, el último cierre y los 5 fijos.
+        <div class="proyeccion-item">
+          <span class="tipo">Pilar Deuda Histórica:</span>
+          <span class="animalito c1" id="fijoDeuda">--</span>
         </div>
-
-        <div id="listaFijosActivos" style="display:none;">
-          <div class="proyeccion-item">
-            <span class="tipo">Pilar Deuda Histórica:</span>
-            <span class="animalito c1" id="fijoDeuda">--</span>
-          </div>
-          <div class="proyeccion-item">
-            <span class="tipo">Pilar Vértice Simetría:</span>
-            <span class="animalito c2" id="fijoSimetria">--</span>
-          </div>
-          <div class="proyeccion-item">
-            <span class="tipo">Triangulación VIP:</span>
-            <span class="animalito c3" id="fijoTriangulacion">--</span>
-          </div>
-          <div class="proyeccion-item">
-            <span class="tipo">Mecánica de Ruptura:</span>
-            <span class="animalito c4" id="fijoRuptura">--</span>
-          </div>
-          <div class="proyeccion-item">
-            <span class="tipo">Espejo Acuático:</span>
-            <span class="animalito c5" id="fijoEspejo">--</span>
-          </div>
+        <div class="proyeccion-item">
+          <span class="tipo">Pilar Vértice Simetría:</span>
+          <span class="animalito c2" id="fijoSimetria">--</span>
+        </div>
+        <div class="proyeccion-item">
+          <span class="tipo">Triangulación VIP:</span>
+          <span class="animalito c3" id="fijoTriangulacion">--</span>
+        </div>
+        <div class="proyeccion-item">
+          <span class="tipo">Mecánica de Ruptura:</span>
+          <span class="animalito c4" id="fijoRuptura">--</span>
+        </div>
+        <div class="proyeccion-item">
+          <span class="tipo">Espejo Acuático:</span>
+          <span class="animalito c5" id="fijoEspejo">--</span>
         </div>
       </div>
     </section>
@@ -313,7 +507,7 @@
       <div class="seccion-cinta">
         <h2>📉 Análisis de Cinta y Detección de Bloqueos</h2>
         <div id="contenidoCintaDinamico">
-          <p>Pulsa <strong>📊 Análisis Técnico</strong> para ver el lectura de cinta cuando haya sorteos registrados.</p>
+          <p>Esperando registros de la jornada para calcular el análisis de cinta.</p>
         </div>
       </div>
     </section>
@@ -323,28 +517,113 @@
       <div class="seccion-dato-caliente">
         <div class="dato-curioso">
           💡 <strong><em>El Dato Caliente de la Hora:</em></strong><br />
-          <em id="textoDatoCaliente">Pulsa <strong>💡 El Dato del Auditor</strong> para consultar el último movimiento detectado.</em>
+          <em id="textoDatoCaliente">Esperando registros de la jornada para mostrar el último movimiento.</em>
         </div>
       </div>
     </section>
 
     <!-- SECCIÓN 4: MÁS INFORMACIÓN -->
     <section id="vistaInfo" class="vista-seccion">
-      <div class="seccion-info">
-        <h2>📲 Más Información — El Ojo De Horus</h2>
-        <p>Consulta nuestras tendencias diarias, auditorías de cinta y accede al canal oficial en Telegram para recibir los reportes y la sección de <strong>Datos V.I.P.</strong> de Lotto Activo y La Granjita.</p>
-        <a class="btn-tg" href="https://t.me/DATOSlottoACTIVObot" target="_blank" rel="nofollow">
-          <span>✈️</span> Abrir Bot en Telegram (@DATOSlottoACTIVObot)
-        </a>
+      <div class="seccion-vip-banner">
+        <h2 class="vip-titulo-principal">🌟 ¡ÚNETE A LA FAMILIA DE GANADORES! 🌟</h2>
+        <p class="vip-subtitulo">
+          Maximiza tus oportunidades con nuestros planes exclusivos o haz alianzas comerciales.
+        </p>
+
+        <div class="vip-card-destacada">
+          <div class="vip-diamante-circulo">💎</div>
+          <h3 class="vip-card-titulo">Hazte VIP</h3>
+          <p class="vip-card-desc">
+            Acceso a pronósticos exclusivos y jugadas de alta probabilidad.
+          </p>
+          <button type="button" class="btn-ver-planes" id="btnAbrirPlanes">Ver Planes</button>
+        </div>
+
+        <p class="disclaimer-tecnico">
+          <strong>Aviso Técnico:</strong> Nuestras proyecciones se basan exclusivamente en análisis estadístico, lectura de cinta y modelos de probabilidad. Brindamos asesoría técnica informativa; los resultados pasados no garantizan aciertos futuros.
+        </p>
       </div>
     </section>
 
+    <!-- MODAL PLANES V.I.P -->
+    <div id="modalPlanesVip" class="modal-vip-overlay" role="dialog" aria-modal="true" aria-labelledby="tituloModalVip">
+      <div class="modal-vip-contenedor">
+        <div class="modal-vip-header">
+          <h3 id="tituloModalVip" class="modal-vip-titulo">⭐ PLANES V.I.P ⭐</h3>
+          <button type="button" class="btn-cerrar-modal" id="btnCerrarPlanes" aria-label="Cerrar planes">✕</button>
+        </div>
+
+        <div class="plan-item-card">
+          <h4 class="plan-nombre">PLAN BÁSICO</h4>
+          <div class="plan-duracion">DURACIÓN: 15 DÍAS</div>
+          <div class="plan-precio">1.500 <span>Bolívares</span></div>
+          <ul class="plan-lista">
+            <li>✅ 5 Pronósticos diarios (3 mañana / 2 tarde).</li>
+            <li>✅ 1 Jugada diaria de alta probabilidad.</li>
+            <li>🎁 <strong>4 días gratis para nuevos afiliados.</strong></li>
+          </ul>
+          <a
+            class="btn-wa-plan"
+            href="https://wa.me/584220250437?text=quiero%20activar%20el%20plan%20B%C3%A1sico"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            💬 Pagar por WhatsApp
+          </a>
+        </div>
+
+        <div class="plan-item-card">
+          <h4 class="plan-nombre">PLAN ESPECIAL TRIPLETAS</h4>
+          <div class="plan-duracion">DURACIÓN: 15 DÍAS</div>
+          <div class="plan-precio">1.000 <span>Bolívares</span></div>
+          <ul class="plan-lista">
+            <li>✅ 3 Pronósticos diarios de alta tendencia.</li>
+            <li>✅ Cobertura: Lotto Activo, Lotto Rey y La Granjita.</li>
+            <li>🎁 <strong>4 días gratis para nuevos afiliados.</strong></li>
+          </ul>
+          <a
+            class="btn-wa-plan"
+            href="https://wa.me/584220250437?text=quiero%20activar%20el%20plan%20Especial%20Tripletas"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            💬 Pagar por WhatsApp
+          </a>
+        </div>
+
+        <div class="plan-item-card premium">
+          <h4 class="plan-nombre">👑 PLAN PREMIUM V.I.P 👑</h4>
+          <div class="plan-duracion">DURACIÓN: 30 DÍAS</div>
+          <div class="plan-precio">3.000 <span>Bolívares</span></div>
+          <ul class="plan-lista">
+            <li>✅ 5 Pronósticos diarios + Datos filtrados exclusivos.</li>
+            <li>✅ Incluye 3 Tripletas diarias (Activo, Rey, Granjita).</li>
+            <li>✅ Descuentos en renovaciones y regalos sorpresa.</li>
+            <li>✅ Soporte personalizado directo.</li>
+            <li>🎁 <strong>4 días gratis para nuevos afiliados.</strong></li>
+          </ul>
+          <a
+            class="btn-wa-plan"
+            href="https://wa.me/584220250437?text=quiero%20activar%20el%20plan%20Premium%20V.I.P"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            💬 Pagar por WhatsApp
+          </a>
+        </div>
+
+        <p class="modal-vip-nota">
+          Nota: Promedio de 3 a 4 días de aciertos de lunes a viernes. Los fines de semana son de alta volatilidad (1 o 0 aciertos).
+        </p>
+      </div>
+    </div>
+
     <!-- BARRA DE BOTONES FIJA ABAJO -->
     <nav class="panel-botones" aria-label="Menú del panel">
-      <button type="button" class="btn-tab" id="btnPronostico" data-target="vistaPronostico">🔮 Pronóstico de Hoy</button>
-      <button type="button" class="btn-tab" id="btnAnalisis" data-target="vistaAnalisis">📊 Análisis Técnico</button>
-      <button type="button" class="btn-tab" id="btnDato" data-target="vistaDato">💡 El Dato del Auditor</button>
-      <button type="button" class="btn-tab" id="btnInfo" data-target="vistaInfo">📲 Más Información</button>
+      <button type="button" class="btn-tab" data-target="vistaPronostico">🔮 Pronóstico de Hoy</button>
+      <button type="button" class="btn-tab" data-target="vistaAnalisis">📊 Análisis Técnico</button>
+      <button type="button" class="btn-tab" data-target="vistaDato">💡 El Dato del Auditor</button>
+      <button type="button" class="btn-tab" data-target="vistaInfo">📲 Más Información</button>
     </nav>
 
   </div>
@@ -373,12 +652,12 @@
     };
 
     const MESES_ES = [
-      "enero", "febrero", "marzo", "abril", "mayo", "junio",
-      "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+      "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
+      "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
     ];
 
     const DIAS_ES = [
-      "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"
+      "DOMINGO", "LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO"
     ];
 
     const OPUESTOS = {
@@ -411,7 +690,7 @@
       return ANIMALITOS[limpio] ? limpio : null;
     }
 
-    function formatearFijoDesdeObjeto(obj, respaldoTexto) {
+    function formatearFijoDesdeObjeto(obj, respaldoTexto = "--") {
       if (!obj || typeof obj !== "object") return respaldoTexto;
       const claveNum = normalizarClaveNumero(obj.numero);
       const animalTexto = obj.animal && String(obj.animal).trim()
@@ -425,24 +704,19 @@
       return [numEtiqueta, animalTexto].filter(Boolean).join(" ");
     }
 
-    function formatearFechaCompleta(data, fechaIsoRespaldo) {
-      if (data?.fecha_legible) return data.fecha_legible;
-      if (data?.fecha_desglose && data.fecha_desglose.dia && data.fecha_desglose.mes && data.fecha_desglose.anio) {
-        const d = data.fecha_desglose;
-        return `${String(d.dia).padStart(2, "0")} de ${d.mes} de ${d.anio}`;
-      }
-      const iso = data?.fecha_proyeccion || fechaIsoRespaldo || obtenerFechaVzla();
-      const partes = String(iso).split("-");
+    function tituloConFecha(data, isoRespaldo) {
+      const iso = data?.fecha_proyeccion || isoRespaldo;
+      const partes = String(iso || "").split("-");
       if (partes.length === 3) {
         const anio = Number(partes[0]);
         const mesIdx = Number(partes[1]) - 1;
         const dia = Number(partes[2]);
         const fechaObj = new Date(Date.UTC(anio, mesIdx, dia));
         const nombreDia = DIAS_ES[fechaObj.getUTCDay()] || "";
-        const nombreMes = MESES_ES[mesIdx] || partes[1];
-        return `${nombreDia}, ${String(dia).padStart(2, "0")} de ${nombreMes} de ${anio}`;
+        const nombreMes = MESES_ES[mesIdx] || "";
+        return `📊 LOS 5 FIJOS DEL ${nombreDia} ${String(dia).padStart(2, "0")} DE ${nombreMes} DE ${anio}`;
       }
-      return iso;
+      return "📊 LOS 5 FIJOS";
     }
 
     function rutaImagenCierre(data, ultimoSorteo) {
@@ -453,7 +727,7 @@
         const pad = clave === "00" ? "00" : clave.padStart(2, "0");
         return `img/${pad}.png`;
       }
-      return "img/0.png";
+      return "img/logo.jpg";
     }
 
     function extraerSorteos(data) {
@@ -487,12 +761,6 @@
     }
 
     function renderizarPronostico() {
-      const aviso = document.getElementById("avisoSinActivar");
-      const lista = document.getElementById("listaFijosActivos");
-      const fechaBadge = document.getElementById("fechaProyeccionTexto");
-      const imgCierre = document.getElementById("imgUltimoCierre");
-      const textoCierre = document.getElementById("textoUltimoCierre");
-
       const registros = extraerSorteos(ultimoResultado);
       const ultimoSorteo = registros.length
         ? [...registros].sort((a, b) => {
@@ -501,42 +769,29 @@
           })[0]
         : null;
 
-      fechaBadge.textContent = `📅 ${formatearFechaCompleta(ultimaProyeccion, fechaHoy)}`;
-      imgCierre.src = rutaImagenCierre(ultimaProyeccion, ultimoSorteo);
+      document.getElementById("tituloPronostico").textContent =
+        tituloConFecha(ultimaProyeccion, fechaProyeccionDoc);
+      document.getElementById("imgPortadaCierre").src =
+        rutaImagenCierre(ultimaProyeccion, ultimoSorteo);
 
-      const cierreObj = ultimaProyeccion?.ultimo_cierre;
-      if (cierreObj?.numero) {
-        const numFmt = cierreObj.numero === "00" ? "00" : String(cierreObj.numero).padStart(2, "0");
-        textoCierre.textContent = `Último cierre (${cierreObj.hora || ""}): ${numFmt} ${cierreObj.animal || ""}`.trim();
-      } else if (ultimoSorteo) {
-        textoCierre.textContent = `Último cierre (${ultimoSorteo.hora}): ${ultimoSorteo.numero} ${ultimoSorteo.animal}`;
-      } else {
-        textoCierre.textContent = "Último cierre: sin sorteos registrados todavía";
-      }
-
-      if (!ultimaProyeccion?.fijos) {
-        aviso.innerHTML = "Aún no hay proyección generada en Firestore para esta fecha.";
-        aviso.style.display = "block";
-        lista.style.display = "none";
-        return;
-      }
-
-      aviso.style.display = "none";
-      lista.style.display = "block";
-
-      const fijos = ultimaProyeccion.fijos;
-      document.getElementById("fijoDeuda").textContent = formatearFijoDesdeObjeto(fijos.Deuda_Historica, "--");
-      document.getElementById("fijoSimetria").textContent = formatearFijoDesdeObjeto(fijos.Vertice_Simetria || fijos.Vértice_Simetria, "--");
-      document.getElementById("fijoTriangulacion").textContent = formatearFijoDesdeObjeto(fijos.Triangulacion_VIP, "--");
-      document.getElementById("fijoRuptura").textContent = formatearFijoDesdeObjeto(fijos.Mecanica_Ruptura || fijos.Mecánica_Ruptura, "--");
-      document.getElementById("fijoEspejo").textContent = formatearFijoDesdeObjeto(fijos.Espejo_Acuario || fijos.Espejo_Acuático, "--");
+      const fijos = ultimaProyeccion?.fijos || {};
+      document.getElementById("fijoDeuda").textContent =
+        formatearFijoDesdeObjeto(fijos.Deuda_Historica);
+      document.getElementById("fijoSimetria").textContent =
+        formatearFijoDesdeObjeto(fijos.Vertice_Simetria || fijos.Vértice_Simetria);
+      document.getElementById("fijoTriangulacion").textContent =
+        formatearFijoDesdeObjeto(fijos.Triangulacion_VIP);
+      document.getElementById("fijoRuptura").textContent =
+        formatearFijoDesdeObjeto(fijos.Mecanica_Ruptura || fijos.Mecánica_Ruptura);
+      document.getElementById("fijoEspejo").textContent =
+        formatearFijoDesdeObjeto(fijos.Espejo_Acuario || fijos.Espejo_Acuático);
     }
 
     function renderizarAnalisis() {
       const registros = extraerSorteos(ultimoResultado);
       if (!registros.length) {
         document.getElementById("contenidoCintaDinamico").innerHTML =
-          `<p>Aún no hay sorteos registrados en <strong>${ultimaFechaResultado || fechaHoy}</strong> para analizar la cinta.</p>`;
+          `<p>Aún no hay sorteos registrados en <strong>${ultimaFechaResultado || fechaHoy}</strong> para mostrar el análisis de cinta.</p>`;
         return;
       }
 
@@ -560,12 +815,12 @@
       const topLabels = terminalesTop.map(([t]) => `Terminal ${t}`);
       const reglasSalto = terminalesTop.map(([t]) => `${t}↔${OPUESTOS[t]}`).join(" / ");
       const focoBloqueo = repetidos.length
-        ? `Detectamos presión en <strong>${repetidos.join(", ")}</strong>.`
-        : `La cinta muestra distribución activa en ambas ruletas.`;
+        ? `Concentración detectada en <strong>${repetidos.join(", ")}</strong>.`
+        : `Distribución activa registrada en la jornada.`;
 
       document.getElementById("contenidoCintaDinamico").innerHTML = `
-        <p>En el Tape Reading de <strong>${ultimaFechaResultado || fechaHoy}</strong> detectamos concentración en <strong>${topLabels.join(", ")}</strong>. ${focoBloqueo} Aplicando la <strong>Mecánica de Ruptura</strong>, el algoritmo proyecta liberación por <strong>Salto al Opuesto</strong> (Regla de Salto: <strong>${reglasSalto}</strong>).</p>
-        <p>La sincronía entre <strong>Lotto Activo</strong> y <strong>La Granjita</strong> marca las zonas clave de tensión y arrastre para la jornada.</p>
+        <p>En la lectura de cinta de <strong>${ultimaFechaResultado || fechaHoy}</strong> se observa mayor frecuencia en <strong>${topLabels.join(", ")}</strong>. ${focoBloqueo} Patrón de salto asociado: <strong>${reglasSalto}</strong>.</p>
+        <p>Seguimiento comparativo entre <strong>Lotto Activo</strong> y <strong>La Granjita</strong> según los sorteos cargados.</p>
       `;
     }
 
@@ -573,7 +828,7 @@
       const registros = extraerSorteos(ultimoResultado);
       if (!registros.length) {
         document.getElementById("textoDatoCaliente").textContent =
-          "Aún no hay movimientos registrados en la jornada para calcular el Dato Caliente.";
+          "Aún no hay sorteos registrados en la jornada para mostrar el último movimiento.";
         return;
       }
 
@@ -584,7 +839,7 @@
 
       const siguienteHora = HORAS[Math.min(ultimo.idxHora + 1, HORAS.length - 1)];
       document.getElementById("textoDatoCaliente").textContent =
-        `¡Mucho ojo aquí, jugador! Último movimiento en ${ultimo.nombreRuleta} a las ${ultimo.hora} con ${ultimo.animal.toUpperCase()} (${ultimo.numero}), activando la Terminal ${ultimo.terminal} y su salto opuesto en Terminal ${ultimo.opuesto}. Para las ${siguienteHora}, vigila la respuesta de los terminales ${ultimo.terminal} y ${ultimo.opuesto} en Lotto Activo y La Granjita. ¡Muy atento a la cinta para asegurar el cobro!`;
+        `Último sorteo registrado en ${ultimo.nombreRuleta} (${ultimo.hora}): ${ultimo.numero} ${ultimo.animal} — Terminal ${ultimo.terminal}, opuesto ${ultimo.opuesto}. Próximo bloque horario: ${siguienteHora}.`;
     }
 
     function pintarVista(targetId) {
@@ -593,14 +848,17 @@
       if (targetId === "vistaDato") renderizarDato();
     }
 
+    const bienvenidaBox = document.getElementById("vistaBienvenida");
     const botonesTab = document.querySelectorAll(".btn-tab");
     const vistas = document.querySelectorAll(".vista-seccion");
 
-    function activarVistaPorBoton(targetId) {
+    function activarVista(targetId) {
       const vistaDestino = document.getElementById(targetId);
       if (!vistaDestino) return;
 
       vistaActualActiva = targetId;
+      if (bienvenidaBox) bienvenidaBox.style.display = "none";
+
       botonesTab.forEach(b => {
         b.classList.toggle("activo", b.getAttribute("data-target") === targetId);
       });
@@ -613,8 +871,26 @@
 
     botonesTab.forEach(btn => {
       btn.addEventListener("click", () => {
-        activarVistaPorBoton(btn.getAttribute("data-target"));
+        activarVista(btn.getAttribute("data-target"));
       });
+    });
+
+    const modalPlanes = document.getElementById("modalPlanesVip");
+    const btnAbrirPlanes = document.getElementById("btnAbrirPlanes");
+    const btnCerrarPlanes = document.getElementById("btnCerrarPlanes");
+
+    btnAbrirPlanes.addEventListener("click", () => {
+      modalPlanes.classList.add("abierto");
+    });
+
+    btnCerrarPlanes.addEventListener("click", () => {
+      modalPlanes.classList.remove("abierto");
+    });
+
+    modalPlanes.addEventListener("click", (e) => {
+      if (e.target === modalPlanes) {
+        modalPlanes.classList.remove("abierto");
+      }
     });
 
     function obtenerFechaVzla() {
