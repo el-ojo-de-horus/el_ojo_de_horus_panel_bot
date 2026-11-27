@@ -68,7 +68,7 @@ RE_FECHA_LOTOVEN = re.compile(
     re.IGNORECASE,
 )
 
-# Captura: <numero 00..36> <texto corto del animal> <hora 08:00 AM .. 07:00 PM>
+# Captura: <numero 00..36> <animal> <hora 08:00 AM .. 07:00 PM>
 RE_SORTEO = re.compile(
     r"(?<!\d)(00|[0-3]?\d)\s+([A-Za-zÁÉÍÓÚáéíóúÑñ\s-]{2,25}?)\s+(0?[89]:00\s*AM|1[01]:00\s*AM|12:00\s*PM|0?[1-7]:00\s*PM)\b",
     re.IGNORECASE,
