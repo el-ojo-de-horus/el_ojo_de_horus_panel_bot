@@ -4,246 +4,361 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>El Ojo De Horus — Panel del Bot</title>
+  <!-- Carga de Tailwind CSS para utilidades responsivas y tipografía Inter -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg-main: #0b0e14;
-      --bg-card: #141923;
-      --bg-card-soft: #1b2230;
-      --accent: #f5b700;
-      --accent-soft: rgba(245, 183, 0, 0.14);
-      --text-main: #f4f6fb;
-      --text-muted: #9aa5b8;
-      --border: rgba(255, 255, 255, 0.08);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    /* Estilos base y diseño personalizado fiel al panel de Telegram */
+    * { box-sizing: border-box; }
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg-main);
-      color: var(--text-main);
-      padding-bottom: 84px;
-      line-height: 1.5;
+      margin: 0;
+      padding: 16px 16px 145px 16px;
+      background-color: #0f172a;
+      font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+      color: #1e293b;
+      min-height: 100vh;
     }
 
-    .container {
-      max-width: 680px;
+    .contenedor-bot {
+      max-width: 780px;
       margin: 0 auto;
-      padding: 16px;
     }
 
-    .hero {
-      background: linear-gradient(135deg, #181f2e 0%, #10141d 100%);
-      border: 1px solid var(--border);
+    /* Control de visibilidad de secciones */
+    .vista-seccion {
+      display: none;
+      animation: fadeIn 0.25s ease-out;
+    }
+    .vista-seccion.activa {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 1. PRONÓSTICO DE HOY (5 FIJOS) */
+    .proyeccion-box {
+      background: #ffffff;
       border-radius: 16px;
-      padding: 18px;
-      margin-bottom: 16px;
-      display: flex;
-      gap: 14px;
-      align-items: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
     }
-
-    .hero img {
-      width: 64px;
-      height: 64px;
-      border-radius: 14px;
-      object-fit: cover;
-      border: 1px solid var(--accent);
-      flex-shrink: 0;
+    .proyeccion-header {
+      background: #1a1a1a;
+      color: #ffeb3b;
+      text-align: center;
+      padding: 20px 16px;
+      font-size: 19px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
     }
-
-    .hero h1 {
-      font-size: 1.35rem;
-      color: var(--accent);
-      margin-bottom: 4px;
-    }
-
-    .hero p {
-      font-size: 0.92rem;
-      color: var(--text-muted);
-    }
-
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 18px;
-      margin-bottom: 16px;
-    }
-
-    .card h2,
-    .card h3 {
-      font-size: 1.1rem;
-      margin-bottom: 12px;
-      color: var(--text-main);
-    }
-
-    .cierre-box {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      background: var(--bg-card-soft);
-      border-radius: 12px;
-      padding: 12px;
-      border: 1px solid var(--border);
-    }
-
-    .cierre-box img {
-      width: 58px;
-      height: 58px;
+    .proyeccion-header img {
+      max-width: 320px;
+      width: 100%;
+      height: auto;
       border-radius: 10px;
-      object-fit: cover;
-      flex-shrink: 0;
+      margin: 0 auto 12px auto;
+      display: block;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     }
-
-    .fijos-list {
-      list-style: none;
-      display: grid;
-      gap: 8px;
+    .proyeccion-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      border-bottom: 1px solid #eeeeee;
+      transition: background-color 0.15s ease;
     }
-
-    .fijos-list li {
-      background: var(--bg-card-soft);
-      padding: 10px 12px;
-      border-radius: 10px;
-      border-left: 3px solid var(--accent);
-      font-size: 0.95rem;
+    .proyeccion-item:hover {
+      background-color: #f8fafc;
     }
-
-    .muted-text {
-      color: var(--text-muted);
-      font-size: 0.95rem;
+    .proyeccion-item:last-child {
+      border-bottom: none;
     }
-
-    .dato-caliente {
-      background: var(--accent-soft);
-      border: 1px solid rgba(245, 183, 0, 0.35);
-      border-radius: 12px;
-      padding: 14px;
-      font-style: italic;
-    }
-
-    .btn-telegram {
-      display: inline-block;
-      margin-top: 12px;
-      background: var(--accent);
-      color: #111318;
+    .tipo {
       font-weight: 700;
-      text-decoration: none;
-      padding: 10px 16px;
+      color: #475569;
+      font-size: 15px;
+    }
+    .animalito {
+      font-weight: 900;
+      font-size: 16px;
+      padding: 7px 15px;
       border-radius: 10px;
-      font-size: 0.92rem;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+      color: #ffffff;
+      letter-spacing: 0.3px;
+    }
+    .c1 { background: #E65100; }
+    .c2 { background: #0288D1; }
+    .c3 { background: #795548; }
+    .c4 { background: #C62828; }
+    .c5 { background: #6A1B9A; }
+
+    /* 2. ANÁLISIS TÉCNICO (CINTA Y BLOQUEOS) */
+    .seccion-cinta {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+      padding: 22px;
+      font-size: 16px;
+      line-height: 1.65;
+      border: 1px solid #e2e8f0;
+    }
+    .seccion-cinta h2 {
+      color: #1a1a1a;
+      font-size: 20px;
+      font-weight: 800;
+      border-bottom: 3px solid #ffeb3b;
+      padding-bottom: 8px;
+      margin-top: 0;
+      margin-bottom: 14px;
+    }
+    .seccion-cinta p {
+      margin-top: 0;
+      margin-bottom: 14px;
+      color: #334155;
+    }
+    .seccion-cinta p:last-child {
+      margin-bottom: 0;
     }
 
-    .bottom-nav {
+    /* 3. EL DATO DEL AUDITOR (DATO CALIENTE) */
+    .seccion-dato-caliente {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+      padding: 20px;
+      border: 1px solid #e2e8f0;
+    }
+    .dato-curioso {
+      background: #fffde7;
+      border-left: 5px solid #fbc02d;
+      padding: 16px;
+      margin: 0;
+      border-radius: 8px;
+      font-style: italic;
+      font-size: 16px;
+      line-height: 1.65;
+      color: #334155;
+    }
+
+    /* 4. MÁS INFORMACIÓN */
+    .seccion-info {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+      padding: 22px;
+      font-size: 15px;
+      line-height: 1.65;
+      border: 1px solid #e2e8f0;
+    }
+    .seccion-info h2 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      color: #1a1a1a;
+      font-size: 20px;
+      font-weight: 800;
+      border-bottom: 3px solid #ffeb3b;
+      padding-bottom: 8px;
+    }
+    .btn-tg {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 14px;
+      background: #0088cc;
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 700;
+      padding: 12px 20px;
+      border-radius: 10px;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+    .btn-tg:hover {
+      background: #0077b3;
+    }
+    .btn-tg:active {
+      transform: scale(0.98);
+    }
+
+    /* BARRA DE BOTONES FIJA ABAJO (ESTILO TECLADO DE BOT EN TELEGRAM) */
+    .panel-botones {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      background: rgba(16, 20, 29, 0.96);
-      backdrop-filter: blur(10px);
-      border-top: 1px solid var(--border);
+      max-width: 780px;
+      margin: 0 auto;
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 4px;
-      padding: 8px 6px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      background: #1e293b;
+      padding: 12px;
+      border-radius: 16px 16px 0 0;
+      border-top: 1px solid #334155;
+      box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.5);
       z-index: 100;
     }
-
-    .bottom-nav a,
-    .bottom-nav button {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      text-align: center;
-      padding: 6px 4px;
-      border-radius: 8px;
+    .btn-tab {
+      background: #273549;
+      color: #f8fafc;
+      border: 1px solid #475569;
+      border-radius: 12px;
+      padding: 13px 12px;
+      font-size: 14px;
+      font-weight: 700;
       cursor: pointer;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      text-align: center;
+      transition: all 0.2s ease;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
-
-    .bottom-nav a:hover,
-    .bottom-nav button:hover {
-      background: var(--bg-card-soft);
-      color: var(--accent);
+    @media (min-width: 640px) {
+      .btn-tab {
+        font-size: 15px;
+      }
+    }
+    .btn-tab:hover {
+      background: #334155;
+    }
+    .btn-tab.activo {
+      background: #ffeb3b;
+      color: #111827;
+      border-color: #ffeb3b;
+      box-shadow: 0 2px 10px rgba(255, 235, 59, 0.35);
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header class="hero">
-      <img src="img/00.jpg" alt="El Ojo De Horus" />
-      <div>
-        <h1>👑 El Ojo De Horus 🔥</h1>
-        <p>Selecciona una opción en el panel inferior para consultar las tendencias, el análisis técnico de cinta o el dato de la hora.</p>
-      </div>
-    </header>
+  <div class="contenedor-bot">
 
-    <section class="card">
-      <div class="cierre-box">
-        <img src="img/00.jpg" alt="Cierre 7:00 PM" />
-        <div>
-          <p id="cierre-estado">Cierre 07:00 PM: Sincronizando...</p>
+    <!-- SECCIÓN 1: PRONÓSTICO DE HOY -->
+    <section id="vistaPronostico" class="vista-seccion activa">
+      <div class="proyeccion-box">
+        <div class="proyeccion-header">
+          <div>
+            <a href="https://blogger.googleusercontent.com/img/a/AVvXsEjkkdFgQQBgQ4Grf_p1WFIiZv_00odpNjazlbcj4xVEbmThDf-aGMynrQCqoA3hZ0TXFJX5hM1Ne2DoB4FzN1bWGEY6ZqjTyYvjBzMZZPKl51inAJKBzoCesk_r1lblEjGKhGrX3TAHMjcURuQ6-RjXVoGb_ubqU0AH8AO8DXpSzJPZpKG3bd3ZzcjKT-M" target="_blank" rel="nofollow">
+              <img
+                alt="Portada de Tendencias El Ojo De Horus"
+                src="https://blogger.googleusercontent.com/img/a/AVvXsEjkkdFgQQBgQ4Grf_p1WFIiZv_00odpNjazlbcj4xVEbmThDf-aGMynrQCqoA3hZ0TXFJX5hM1Ne2DoB4FzN1bWGEY6ZqjTyYvjBzMZZPKl51inAJKBzoCesk_r1lblEjGKhGrX3TAHMjcURuQ6-RjXVoGb_ubqU0AH8AO8DXpSzJPZpKG3bd3ZzcjKT-M"
+                onerror="this.onerror=null;this.src='https://placehold.co/640x360/1a1a1a/ffeb3b?text=El+Ojo+De+Horus';"
+              />
+            </a>
+          </div>
+          <span id="tituloPronostico">📊 LOS 5 FIJOS DE HOY</span>
+        </div>
+
+        <div class="proyeccion-item">
+          <span class="tipo">Pilar Deuda Histórica:</span>
+          <span class="animalito c1" id="fijoDeuda">13 Mono</span>
+        </div>
+        <div class="proyeccion-item">
+          <span class="tipo">Pilar Vértice Simetría:</span>
+          <span class="animalito c2" id="fijoSimetria">35 Jirafa</span>
+        </div>
+        <div class="proyeccion-item">
+          <span class="tipo">Triangulación VIP:</span>
+          <span class="animalito c3" id="fijoTriangulacion">04 Alacrán</span>
+        </div>
+        <div class="proyeccion-item">
+          <span class="tipo">Mecánica de Ruptura:</span>
+          <span class="animalito c4" id="fijoRuptura">26 Vaca</span>
+        </div>
+        <div class="proyeccion-item">
+          <span class="tipo">Espejo Acuático:</span>
+          <span class="animalito c5" id="fijoEspejo">0 Delfín</span>
         </div>
       </div>
     </section>
 
-    <section class="card" id="sec-pronostico">
-      <h2>📊 Los 5 Fijos de Hoy</h2>
-      <ul class="fijos-list">
-        <li id="fijo-deuda">Pilar Deuda Histórica: 13 Mono</li>
-        <li id="fijo-simetria">Pilar Vértice Simetría: 35 Jirafa</li>
-        <li id="fijo-triangulacion">Triangulación VIP: 04 Alacrán</li>
-        <li id="fijo-ruptura">Mecánica de Ruptura: 26 Vaca</li>
-        <li id="fijo-espejo">Espejo Acuático: 0 Delfín</li>
-      </ul>
-    </section>
-
-    <section class="card" id="sec-analisis">
-      <h2>📉 Análisis de Cinta y Detección de Bloqueos</h2>
-      <p class="muted-text" id="analisis-cinta">
-        Sincronizando datos de Lotto Activo y La Granjita desde Firebase para generar el Tape Reading y las zonas de bloqueo...
-      </p>
-    </section>
-
-    <section class="card" id="sec-auditor">
-      <h3>💡 El Dato Caliente de la Hora</h3>
-      <div class="dato-caliente">
-        <p id="dato-caliente">
-          Sincronizando último sorteo registrado en Firebase para calcular el dato caliente de la hora...
-        </p>
+    <!-- SECCIÓN 2: ANÁLISIS TÉCNICO (CINTA Y DETECCIÓN DE BLOQUEOS) -->
+    <section id="vistaAnalisis" class="vista-seccion">
+      <div class="seccion-cinta">
+        <h2>📉 Análisis de Cinta y Detección de Bloqueos</h2>
+        <div id="contenidoCintaDinamico">
+          <p>En el Tape Reading detectamos concentración en la <strong>Terminal 4, 5 y 0</strong> (Alacrán 04, Jirafa 35 y Vaca 26). Aplicando la <strong>Mecánica de Ruptura</strong>, el algoritmo proyecta liberación por <strong>Salto al Opuesto</strong> (Regla de Salto <strong>4↔9 / 5↔0 / 0↔5</strong>) impulsando la tracción hacia el <strong>Alacrán (04)</strong> y reforzando la continuidad del <strong>Mono (13)</strong> y la <strong>Jirafa (35)</strong>.</p>
+          <p>La sincronía entre <strong>Lotto Activo</strong> y <strong>La Granjita</strong> marca las zonas clave de tensión y arrastre para la jornada.</p>
+        </div>
       </div>
     </section>
 
-    <section class="card" id="sec-info">
-      <h2>📲 Más Información — El Ojo De Horus</h2>
-      <p class="muted-text">
-        Consulta nuestras tendencias diarias y accede a la comunidad oficial en Telegram para recibir los reportes y la sección de <strong>Datos V.I.P.</strong>
-      </p>
-      <a class="btn-telegram" href="https://t.me/DATOSlottoACTIVObot" target="_blank" rel="noopener noreferrer">
-        Ir al Bot en Telegram
-      </a>
+    <!-- SECCIÓN 3: EL DATO DEL AUDITOR (DATO CALIENTE DE LA HORA) -->
+    <section id="vistaDato" class="vista-seccion">
+      <div class="seccion-dato-caliente">
+        <div class="dato-curioso">
+          💡 <strong><em>El Dato Caliente de la Hora:</em></strong><br />
+          <em id="textoDatoCaliente">¡Mucho ojo aquí, jugador! Analizando la cinta de Lotto Activo y La Granjita en tiempo real para detectar el próximo movimiento clave y su salto opuesto en la jornada.</em>
+        </div>
+      </div>
     </section>
+
+    <!-- SECCIÓN 4: MÁS INFORMACIÓN -->
+    <section id="vistaInfo" class="vista-seccion">
+      <div class="seccion-info">
+        <h2>📲 Más Información — El Ojo De Horus</h2>
+        <p>Consulta nuestras tendencias diarias, auditorías de cinta y accede al canal oficial en Telegram para recibir los reportes y la sección de <strong>Datos V.I.P.</strong> de Lotto Activo y La Granjita.</p>
+        <a class="btn-tg" href="https://t.me/DATOSlottoACTIVObot" target="_blank" rel="nofollow">
+          <span>✈️</span> Abrir Bot en Telegram (@DATOSlottoACTIVObot)
+        </a>
+      </div>
+    </section>
+
+    <!-- BARRA DE BOTONES FIJA ABAJO (ESTILO TECLADO DE BOT) -->
+    <nav class="panel-botones" aria-label="Menú del panel">
+      <button type="button" class="btn-tab activo" data-target="vistaPronostico">🔮 Pronóstico de Hoy</button>
+      <button type="button" class="btn-tab" data-target="vistaAnalisis">📊 Análisis Técnico</button>
+      <button type="button" class="btn-tab" data-target="vistaDato">💡 El Dato del Auditor</button>
+      <button type="button" class="btn-tab" data-target="vistaInfo">📲 Más Información</button>
+    </nav>
+
   </div>
 
-  <nav class="bottom-nav">
-    <button type="button" data-target="sec-pronostico">🔮 Pronóstico de Hoy</button>
-    <button type="button" data-target="sec-analisis">📊 Análisis Técnico</button>
-    <button type="button" data-target="sec-auditor">💡 El Dato del Auditor</button>
-    <button type="button" data-target="sec-info">📲 Más Información</button>
-  </nav>
+  <!-- LÓGICA DE NAVEGACIÓN ENTRE PESTAÑAS -->
+  <script>
+    const botonesTab = document.querySelectorAll(".btn-tab");
+    const vistas = document.querySelectorAll(".vista-seccion");
 
+    function activarVista(targetId) {
+      const vistaDestino = document.getElementById(targetId);
+      if (!vistaDestino) return;
+
+      botonesTab.forEach(b => {
+        b.classList.toggle("activo", b.getAttribute("data-target") === targetId);
+      });
+      vistas.forEach(v => {
+        v.classList.toggle("activa", v.id === targetId);
+      });
+    }
+
+    botonesTab.forEach(btn => {
+      btn.addEventListener("click", () => {
+        activarVista(btn.getAttribute("data-target"));
+      });
+    });
+
+    const params = new URLSearchParams(window.location.search);
+    const vistaParam = params.get("vista");
+    const mapaVistas = {
+      pronostico: "vistaPronostico",
+      analisis: "vistaAnalisis",
+      dato: "vistaDato",
+      info: "vistaInfo"
+    };
+    if (vistaParam && mapaVistas[vistaParam.toLowerCase()]) {
+      activarVista(mapaVistas[vistaParam.toLowerCase()]);
+    }
+  </script>
+
+  <!-- INTEGRACIÓN MODULAR EN TIEMPO REAL CON FIREBASE FIRESTORE -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       projectId: "el-ojo-de-horus-bot"
@@ -273,7 +388,15 @@
       "32": "23", "33": "3"
     };
 
-    const ORDEN_HORAS = [
+    const OPUESTOS = {
+      "0": "5", "5": "0",
+      "1": "6", "6": "1",
+      "2": "7", "7": "2",
+      "3": "8", "8": "3",
+      "4": "9", "9": "4"
+    };
+
+    const HORAS = [
       "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM",
       "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM",
       "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"
@@ -297,158 +420,114 @@
       return `${n.padStart(2, "0")} ${ANIMALITOS[n]}`;
     }
 
-    function rutaImagen(num) {
-      const n = formatearNum(num);
-      const archivo = n === "00" ? "00.jpg" : `${n.padStart(2, "0")}.jpg`;
-      return `img/${archivo}`;
-    }
-
-    function extraerSecuencia(mapa = {}, fuente = "LA") {
+    function extraerSecuencia(mapa = {}, nombreRuleta = "Lotto Activo") {
       const items = [];
-      for (const hora of ORDEN_HORAS) {
+      HORAS.forEach((hora, idxHora) => {
         const entry = mapa?.[hora];
         if (entry && entry.numero !== undefined) {
           const n = formatearNum(entry.numero);
-          items.push({ hora, numero: n, animal: ANIMALITOS[n], fuente });
+          const animal = entry.animal ? String(entry.animal).trim() : ANIMALITOS[n];
+          items.push({
+            hora,
+            idxHora,
+            numero: n,
+            animal,
+            nombreRuleta,
+            terminal: n.slice(-1),
+            opuesto: OPUESTOS[n.slice(-1)] ?? "?"
+          });
         }
-      }
+      });
       return items;
     }
 
-    function calcularProyecciones(data) {
+    function procesarDatosDesdeFirebase(data, fechaStr) {
       const seqLA = extraerSecuencia(data?.lotto_activo || {}, "Lotto Activo");
       const seqLG = extraerSecuencia(data?.la_granjita || {}, "La Granjita");
-      const combinada = [...seqLA, ...seqLG];
+      const registros = [...seqLA, ...seqLG];
 
-      if (combinada.length === 0) {
-        return {
-          fijos: {
-            deuda: "13 Mono",
-            simetria: "35 Jirafa",
-            triangulacion: "04 Alacrán",
-            ruptura: "26 Vaca",
-            espejo: "0 Delfín"
-          },
-          cintaTexto: "A la espera de los primeros sorteos del día en Firestore para calcular lectura de cinta y zonas de bloqueo.",
-          datoCaliente: "Esperando primer sorteo registrado del día para activar el dato caliente de la hora.",
-          cierre: "07:00 PM: Sincronizando...",
-          cierreImg: "img/00.jpg"
-        };
-      }
+      if (!registros.length) return;
 
-      const salidosSet = new Set(combinada.map(x => x.numero));
-      const conteo = {};
-      for (const item of combinada) {
-        conteo[item.numero] = (conteo[item.numero] || 0) + 1;
-      }
+      const salidosSet = new Set(registros.map(r => r.numero));
+      const conteoTerminales = {};
+      const conteoAnimales = {};
+
+      registros.forEach(r => {
+        conteoTerminales[r.terminal] = (conteoTerminales[r.terminal] || 0) + 1;
+        const clave = `${r.numero.padStart(2, "0")} ${r.animal}`;
+        conteoAnimales[clave] = (conteoAnimales[clave] || 0) + 1;
+      });
 
       const candidatosDeuda = TODOS_NUMEROS.filter(n => !salidosSet.has(n));
       const deudaNum = candidatosDeuda.length > 0
-        ? candidatosDeuda[(combinada.length * 7) % candidatosDeuda.length]
-        : Object.entries(conteo).sort((a, b) => a[1] - b[1])[0][0];
+        ? candidatosDeuda[(registros.length * 7) % candidatosDeuda.length]
+        : Object.entries(conteoAnimales).sort((a, b) => a[1] - b[1])[0][0].split(" ")[0];
 
-      const primero = combinada[0];
-      const ultimo = combinada[combinada.length - 1];
+      const primero = registros[0];
+      const ultimo = [...registros].sort((a, b) => {
+        if (b.idxHora !== a.idxHora) return b.idxHora - a.idxHora;
+        return a.nombreRuleta === "La Granjita" ? -1 : 1;
+      })[0];
+
       const valA = primero.numero === "00" ? 37 : parseInt(primero.numero, 10);
       const valB = ultimo.numero === "00" ? 37 : parseInt(ultimo.numero, 10);
-      const simetriaNum = TODOS_NUMEROS[(valA + valB + combinada.length) % TODOS_NUMEROS.length];
+      const simetriaNum = TODOS_NUMEROS[(valA + valB + registros.length) % TODOS_NUMEROS.length];
 
       const ultLA = seqLA.length ? seqLA[seqLA.length - 1] : ultimo;
       const ultLG = seqLG.length ? seqLG[seqLG.length - 1] : primero;
       const nLA = ultLA.numero === "00" ? 37 : parseInt(ultLA.numero, 10);
       const nLG = ultLG.numero === "00" ? 37 : parseInt(ultLG.numero, 10);
-      const triangNum = TODOS_NUMEROS[Math.abs(nLA - nLG + combinada.length * 3) % TODOS_NUMEROS.length];
+      const triangNum = TODOS_NUMEROS[Math.abs(nLA - nLG + registros.length * 3) % TODOS_NUMEROS.length];
 
-      const ultimosDos = combinada.slice(-2);
+      const ultimosDos = registros.slice(-2);
       let rupturaNum;
-      if (ultimosDos.length === 2 && ultimosDos[0].numero.slice(-1) === ultimosDos[1].numero.slice(-1)) {
-        const termRep = ultimosDos[1].numero.slice(-1);
-        rupturaNum = TODOS_NUMEROS.find(n => !n.endsWith(termRep) && n !== ultimo.numero) || "26";
+      if (ultimosDos.length === 2 && ultimosDos[0].terminal === ultimosDos[1].terminal) {
+        rupturaNum = TODOS_NUMEROS.find(n => !n.endsWith(ultimosDos[1].terminal) && n !== ultimo.numero) || "26";
       } else {
         rupturaNum = TODOS_NUMEROS[(valB + 11) % TODOS_NUMEROS.length];
       }
 
       const espejoNum = ESPEJO_ACUATICO[ultimo.numero] || "0";
 
-      const repetidos = Object.entries(conteo)
-        .filter(([, cant]) => cant > 1)
-        .map(([n, cant]) => `${etiquetaNum(n)} (${cant}x)`);
+      document.getElementById("fijoDeuda").textContent = etiquetaNum(deudaNum);
+      document.getElementById("fijoSimetria").textContent = etiquetaNum(simetriaNum);
+      document.getElementById("fijoTriangulacion").textContent = etiquetaNum(triangNum);
+      document.getElementById("fijoRuptura").textContent = etiquetaNum(rupturaNum);
+      document.getElementById("fijoEspejo").textContent = etiquetaNum(espejoNum);
 
-      const terminales = {};
-      for (const item of combinada) {
-        const t = item.numero.slice(-1);
-        terminales[t] = (terminales[t] || 0) + 1;
-      }
-      const terminalFuerte = Object.entries(terminales).sort((a, b) => b[1] - a[1])[0];
+      const terminalesTop = Object.entries(conteoTerminales)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3);
 
-      const cintaTexto = [
-        `Sorteos analizados hoy: ${combinada.length} (${seqLA.length} Lotto Activo / ${seqLG.length} La Granjita).`,
-        `Última lectura en cinta: ${etiquetaNum(ultimo.numero)} (${ultimo.hora} - ${ultimo.fuente}).`,
-        repetidos.length ? `Repeticiones detectadas: ${repetidos.join(", ")}.` : "Sin repeticiones exactas aún en el tramo actual.",
-        terminalFuerte ? `Zona de presión / terminal dominante: ${terminalFuerte[0]} (${terminalFuerte[1]} apariciones).` : ""
-      ].filter(Boolean).join(" ");
+      const repetidos = Object.entries(conteoAnimales)
+        .filter(([, cant]) => cant >= 2)
+        .map(([nombre, cant]) => `${nombre} (${cant}x)`);
 
-      const datoCalienteNum = ESPEJO_ACUATICO[ultimo.numero] || triangNum;
-      const datoCaliente = `Tras ${etiquetaNum(ultimo.numero)} (${ultimo.hora} - ${ultimo.fuente}), la proyección inmediata apunta a ${etiquetaNum(datoCalienteNum)} con respaldo en ${etiquetaNum(deudaNum)}.`;
+      const topLabels = terminalesTop.map(([t]) => `Terminal ${t}`);
+      const reglasSalto = terminalesTop.map(([t]) => `${t}↔${OPUESTOS[t]}`).join(" / ");
+      const focoBloqueo = repetidos.length
+        ? `Detectamos presión en <strong>${repetidos.join(", ")}</strong>.`
+        : `La cinta muestra distribución activa en ambas ruletas.`;
 
-      const cierreEntry = data?.lotto_activo?.["07:00 PM"] || data?.la_granjita?.["07:00 PM"] || ultimo;
-      const cierreNum = formatearNum(cierreEntry.numero);
-      const cierreTexto = data?.lotto_activo?.["07:00 PM"]
-        ? `Cierre 07:00 PM: ${etiquetaNum(cierreNum)}`
-        : `Último corte (${cierreEntry.hora}): ${etiquetaNum(cierreNum)}`;
+      document.getElementById("contenidoCintaDinamico").innerHTML = `
+        <p>En el Tape Reading de <strong>${fechaStr}</strong> (${registros.length} sorteos: ${seqLA.length} Lotto Activo / ${seqLG.length} La Granjita) detectamos concentración en <strong>${topLabels.join(", ")}</strong>. ${focoBloqueo} Aplicando la <strong>Mecánica de Ruptura</strong>, el algoritmo proyecta liberación por <strong>Salto al Opuesto</strong> (Regla de Salto: <strong>${reglasSalto}</strong>).</p>
+        <p>Última lectura en cinta: <strong>${etiquetaNum(ultimo.numero)}</strong> (${ultimo.hora} - ${ultimo.nombreRuleta}), con proyección de respaldo en <strong>${etiquetaNum(espejoNum)}</strong> y <strong>${etiquetaNum(deudaNum)}</strong>.</p>
+      `;
 
-      return {
-        fijos: {
-          deuda: etiquetaNum(deudaNum),
-          simetria: etiquetaNum(simetriaNum),
-          triangulacion: etiquetaNum(triangNum),
-          ruptura: etiquetaNum(rupturaNum),
-          espejo: etiquetaNum(espejoNum)
-        },
-        cintaTexto,
-        datoCaliente,
-        cierre: cierreTexto,
-        cierreImg: rutaImagen(cierreNum)
-      };
+      const siguienteHora = HORAS[Math.min(ultimo.idxHora + 1, HORAS.length - 1)];
+      document.getElementById("textoDatoCaliente").textContent =
+        `¡Mucho ojo aquí, jugador! Último movimiento en ${ultimo.nombreRuleta} a las ${ultimo.hora} con ${ultimo.animal.toUpperCase()} (${ultimo.numero.padStart(2, "0")}), activando la Terminal ${ultimo.terminal} y su salto opuesto en Terminal ${ultimo.opuesto}. Para las ${siguienteHora}, vigila la respuesta de los terminales ${ultimo.terminal} y ${ultimo.opuesto} en Lotto Activo y La Granjita. ¡Muy atento a la cinta para asegurar el cobro!`;
     }
-
-    function pintarEnPantalla(res) {
-      document.getElementById("fijo-deuda").textContent = `Pilar Deuda Histórica: ${res.fijos.deuda}`;
-      document.getElementById("fijo-simetria").textContent = `Pilar Vértice Simetría: ${res.fijos.simetria}`;
-      document.getElementById("fijo-triangulacion").textContent = `Triangulación VIP: ${res.fijos.triangulacion}`;
-      document.getElementById("fijo-ruptura").textContent = `Mecánica de Ruptura: ${res.fijos.ruptura}`;
-      document.getElementById("fijo-espejo").textContent = `Espejo Acuático: ${res.fijos.espejo}`;
-      document.getElementById("analisis-cinta").textContent = res.cintaTexto;
-      document.getElementById("dato-caliente").textContent = res.datoCaliente;
-      document.getElementById("cierre-estado").textContent = res.cierre;
-
-      const imgs = document.querySelectorAll("img");
-      if (imgs.length > 1) {
-        imgs[1].src = res.cierreImg;
-      }
-    }
-
-    document.querySelectorAll(".bottom-nav button[data-target]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const target = document.getElementById(btn.dataset.target);
-        if (target) {
-          target.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-      });
-    });
 
     const fechaDoc = obtenerFechaVzla();
     const docRef = doc(db, "resultados_diarios", fechaDoc);
 
-    getDoc(docRef).then((snap) => {
-      pintarEnPantalla(calcularProyecciones(snap.exists() ? snap.data() : {}));
-    }).catch(() => {});
-
     onSnapshot(docRef, (snap) => {
-      const data = snap.exists() ? snap.data() : {};
-      pintarEnPantalla(calcularProyecciones(data));
+      if (snap.exists()) {
+        procesarDatosDesdeFirebase(snap.data(), snap.id);
+      }
     }, (err) => {
-      console.error("Error leyendo Firestore:", err);
+      console.warn("Error escuchando Firestore:", err.message);
     });
   </script>
 </body>
