@@ -628,124 +628,348 @@
 
   </div>
 
+  <!-- CONTROL INDEPENDIENTE DE NAVEGACIÓN Y MODAL -->
+  <script>
+    (function () {
+      const bienvenidaBox = document.getElementById("vistaBienvenida");
+      const botonesTab = document.querySelectorAll(".btn-tab");
+      const vistas = document.querySelectorAll(".vista-seccion");
+
+      window.activarVistaHorus = function (targetId) {
+        const vistaDestino = document.getElementById(targetId);
+        if (!vistaDestino) return;
+
+        window.__vistaActualHorus = targetId;
+        if (bienvenidaBox) bienvenidaBox.style.display = "none";
+
+        botonesTab.forEach(b => {
+          b.classList.toggle("activo", b.getAttribute("data-target") === targetId);
+        });
+        vistas.forEach(v => {
+          v.classList.toggle("activa", v.id === targetId);
+        });
+
+        if (typeof window.__pintarVistaHorus === "function") {
+          window.__pintarVistaHorus(targetId);
+        }
+      };
+
+      botonesTab.forEach(btn => {
+        btn.addEventListener("click", () => {
+          window.activarVistaHorus(btn.getAttribute("data-target"));
+        });
+      });
+
+      const modalPlanes = document.getElementById("modalPlanesVip");
+      const btnAbrirPlanes = document.getElementById("btnAbrirPlanes");
+      const btnCerrarPlanes = document.getElementById("btnCerrarPlanes");
+
+      if (btnAbrirPlanes && modalPlanes) {
+        btnAbrirPlanes.addEventListener("click", () => {
+          modalPlanes.classList.add("abierto");
+        });
+      }
+
+      if (btnCerrarPlanes && modalPlanes) {
+        btnCerrarPlanes.addEventListener("click", () => {
+          modalPlanes.classList.remove("abierto");
+        });
+      }
+
+      if (modalPlanes) {
+        modalPlanes.addEventListener("click", (e) => {
+          if (e.target === modalPlanes) {
+            modalPlanes.classList.remove("abierto");
+          }
+        });
+      }
+    })();
+  </script>
+
   <!-- INTEGRACIÓN MODULAR EN TIEMPO REAL CON FIREBASE FIRESTORE -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    try {
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+      const { getFirestore, doc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
 
-    const firebaseConfig = {
-      projectId: "el-ojo-de-horus-bot"
-    };
+      const firebaseConfig = {
+        projectId: "el-ojo-de-horus-bot"
+      };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
 
-    const ANIMALITOS = {
-      "0": "Delfín", "00": "Ballena", "1": "Carnero", "2": "Toro", "3": "Ciempiés",
-      "4": "Alacrán", "5": "León", "6": "Rana", "7": "Perico", "8": "Ratón",
-      "9": "Águila", "10": "Tigre", "11": "Gato", "12": "Caballo", "13": "Mono",
-      "14": "Paloma", "15": "Zorro", "16": "Oso", "17": "Pavo", "18": "Burro",
-      "19": "Chivo", "20": "Cochino", "21": "Gallo", "22": "Camello", "23": "Cebra",
-      "24": "Iguana", "25": "Gallina", "26": "Vaca", "27": "Perro", "28": "Zamuro",
-      "29": "Elefante", "30": "Caimán", "31": "Lapa", "32": "Ardilla", "33": "Pescado",
-      "34": "Venado", "35": "Jirafa", "36": "Culebra"
-    };
+      const ANIMALITOS = {
+        "0": "Delfín", "00": "Ballena", "1": "Carnero", "2": "Toro", "3": "Ciempiés",
+        "4": "Alacrán", "5": "León", "6": "Rana", "7": "Perico", "8": "Ratón",
+        "9": "Águila", "10": "Tigre", "11": "Gato", "12": "Caballo", "13": "Mono",
+        "14": "Paloma", "15": "Zorro", "16": "Oso", "17": "Pavo", "18": "Burro",
+        "19": "Chivo", "20": "Cochino", "21": "Gallo", "22": "Camello", "23": "Cebra",
+        "24": "Iguana", "25": "Gallina", "26": "Vaca", "27": "Perro", "28": "Zamuro",
+        "29": "Elefante", "30": "Caimán", "31": "Lapa", "32": "Ardilla", "33": "Pescado",
+        "34": "Venado", "35": "Jirafa", "36": "Culebra"
+      };
 
-    const MESES_ES = [
-      "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
-      "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
-    ];
-
-    const DIAS_ES = [
-      "DOMINGO", "LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO"
-    ];
-
-    const OPUESTOS = {
-      "0": "5", "5": "0",
-      "1": "6", "6": "1",
-      "2": "7", "7": "2",
-      "3": "8", "8": "3",
-      "4": "9", "9": "4"
-    };
-
-    const HORAS = [
-      "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM",
-      "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM",
-      "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"
-    ];
-
-    let ultimaProyeccion = null;
-    let ultimoResultado = null;
-    let ultimaFechaResultado = null;
-    let vistaActualActiva = null;
-
-    function normalizarClaveNumero(num) {
-      if (num === undefined || num === null) return null;
-      const limpio = String(num).trim();
-      if (limpio === "00") return "00";
-      if (/^\d+$/.test(limpio)) {
-        const sinCeros = String(parseInt(limpio, 10));
-        if (ANIMALITOS[sinCeros]) return sinCeros;
-      }
-      return ANIMALITOS[limpio] ? limpio : null;
-    }
-
-    function resolverFijoUnico(obj, usados, respaldoTexto = "--") {
-      if (!obj || typeof obj !== "object") return respaldoTexto;
-
-      const claveOriginal = normalizarClaveNumero(obj.numero);
-      const textoOriginal = obj.animal && String(obj.animal).trim()
-        ? String(obj.animal).trim()
-        : (claveOriginal ? ANIMALITOS[claveOriginal] : "");
-
-      if (!claveOriginal && !textoOriginal) return respaldoTexto;
-
-      if (claveOriginal && !usados.has(claveOriginal)) {
-        usados.add(claveOriginal);
-        const numEtiqueta = claveOriginal === "00" ? "00" : claveOriginal.padStart(2, "0");
-        const nombreAnimal = textoOriginal || ANIMALITOS[claveOriginal];
-        return `${numEtiqueta} ${nombreAnimal}`.trim();
-      }
-
-      const ordenClaves = [
-        "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
-        "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
-        "21", "22", "23", "24", "25", "26", "27", "28", "29", "30",
-        "31", "32", "33", "34", "35", "36", "0", "00"
+      const MESES_ES = [
+        "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
+        "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
       ];
 
-      const idxBase = claveOriginal ? ordenClaves.indexOf(claveOriginal) : -1;
-      const rotados = idxBase >= 0
-        ? [...ordenClaves.slice(idxBase + 1), ...ordenClaves.slice(0, idxBase)]
-        : ordenClaves;
+      const DIAS_ES = [
+        "DOMINGO", "LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO"
+      ];
 
-      for (const candidata of rotados) {
-        if (!usados.has(candidata) && ANIMALITOS[candidata]) {
-          usados.add(candidata);
-          const numEtiqueta = candidata === "00" ? "00" : candidata.padStart(2, "0");
-          return `${numEtiqueta} ${ANIMALITOS[candidata]}`;
+      const OPUESTOS = {
+        "0": "5", "5": "0",
+        "1": "6", "6": "1",
+        "2": "7", "7": "2",
+        "3": "8", "8": "3",
+        "4": "9", "9": "4"
+      };
+
+      const HORAS = [
+        "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM",
+        "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM",
+        "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"
+      ];
+
+      let ultimaProyeccion = null;
+      let ultimoResultado = null;
+      let ultimaFechaResultado = null;
+
+      function normalizarClaveNumero(num) {
+        if (num === undefined || num === null) return null;
+        const limpio = String(num).trim();
+        if (limpio === "00") return "00";
+        if (/^\d+$/.test(limpio)) {
+          const sinCeros = String(parseInt(limpio, 10));
+          if (ANIMALITOS[sinCeros]) return sinCeros;
         }
+        return ANIMALITOS[limpio] ? limpio : null;
       }
 
-      return respaldoTexto;
-    }
+      function resolverFijoUnico(obj, usados, respaldoTexto = "--") {
+        if (!obj || typeof obj !== "object") return respaldoTexto;
 
-    function tituloConFecha(data, isoRespaldo) {
-      const iso = data?.fecha_proyeccion || isoRespaldo;
-      const partes = String(iso || "").split("-");
-      if (partes.length === 3) {
-        const anio = Number(partes[0]);
-        const mesIdx = Number(partes[1]) - 1;
-        const dia = Number(partes[2]);
-        const fechaObj = new Date(Date.UTC(anio, mesIdx, dia));
-        const nombreDia = DIAS_ES[fechaObj.getUTCDay()] || "";
-        const nombreMes = MESES_ES[mesIdx] || "";
-        return `📊 LOS 5 FIJOS DEL ${nombreDia} ${String(dia).padStart(2, "0")} DE ${nombreMes} DE ${anio}`;
+        const claveOriginal = normalizarClaveNumero(obj.numero);
+        const textoOriginal = obj.animal && String(obj.animal).trim()
+          ? String(obj.animal).trim()
+          : (claveOriginal ? ANIMALITOS[claveOriginal] : "");
+
+        if (!claveOriginal && !textoOriginal) return respaldoTexto;
+
+        if (claveOriginal && !usados.has(claveOriginal)) {
+          usados.add(claveOriginal);
+          const numEtiqueta = claveOriginal === "00" ? "00" : claveOriginal.padStart(2, "0");
+          const nombreAnimal = textoOriginal || ANIMALITOS[claveOriginal];
+          return `${numEtiqueta} ${nombreAnimal}`.trim();
+        }
+
+        const ordenClaves = [
+          "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+          "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
+          "21", "22", "23", "24", "25", "26", "27", "28", "29", "30",
+          "31", "32", "33", "34", "35", "36", "0", "00"
+        ];
+
+        const idxBase = claveOriginal ? ordenClaves.indexOf(claveOriginal) : -1;
+        const rotados = idxBase >= 0
+          ? [...ordenClaves.slice(idxBase + 1), ...ordenClaves.slice(0, idxBase)]
+          : ordenClaves;
+
+        for (const candidata of rotados) {
+          if (!usados.has(candidata) && ANIMALITOS[candidata]) {
+            usados.add(candidata);
+            const numEtiqueta = candidata === "00" ? "00" : candidata.padStart(2, "0");
+            return `${numEtiqueta} ${ANIMALITOS[candidata]}`;
+          }
+        }
+
+        return respaldoTexto;
       }
-      return "📊 LOS 5 FIJOS";
-    }
 
-    function rutaImagenCierre(data, ultimoSorteo) {
-      if (data?.imagen_cierre) return data.imagen_cierre;
-      if (data?.ultimo_cierre?.imagen) return data.ultimo_cierre.imagen;
-      const clave = normal
+      function tituloConFecha(data, isoRespaldo) {
+        const iso = data?.fecha_proyeccion || isoRespaldo;
+        const partes = String(iso || "").split("-");
+        if (partes.length === 3) {
+          const anio = Number(partes[0]);
+          const mesIdx = Number(partes[1]) - 1;
+          const dia = Number(partes[2]);
+          const fechaObj = new Date(Date.UTC(anio, mesIdx, dia));
+          const nombreDia = DIAS_ES[fechaObj.getUTCDay()] || "";
+          const nombreMes = MESES_ES[mesIdx] || "";
+          return `📊 LOS 5 FIJOS DEL ${nombreDia} ${String(dia).padStart(2, "0")} DE ${nombreMes} DE ${anio}`;
+        }
+        return "📊 LOS 5 FIJOS";
+      }
+
+      function rutaImagenCierre(data, ultimoSorteo) {
+        if (data?.imagen_cierre) return data.imagen_cierre;
+        if (data?.ultimo_cierre?.imagen) return data.ultimo_cierre.imagen;
+        const clave = normalizarClaveNumero(data?.ultimo_cierre?.numero || ultimoSorteo?.numero);
+        if (clave) {
+          const pad = clave === "00" ? "00" : clave.padStart(2, "0");
+          return `img/${pad}.png`;
+        }
+        return "img/logo.jpg";
+      }
+
+      function extraerSorteos(data) {
+        const registros = [];
+        ["lotto_activo", "la_granjita"].forEach(ruleta => {
+          const bloque = data?.[ruleta] || {};
+          HORAS.forEach((hora, idxHora) => {
+            const item = bloque[hora];
+            if (item && item.numero !== undefined) {
+              const claveNum = normalizarClaveNumero(item.numero);
+              if (!claveNum) return;
+              const animal = item.animal && String(item.animal).trim()
+                ? String(item.animal).trim()
+                : ANIMALITOS[claveNum];
+              const etiquetaNum = claveNum === "00" ? "00" : claveNum.padStart(2, "0");
+              const terminal = etiquetaNum.slice(-1);
+              registros.push({
+                ruleta,
+                nombreRuleta: ruleta === "lotto_activo" ? "Lotto Activo" : "La Granjita",
+                hora,
+                idxHora,
+                numero: etiquetaNum,
+                animal,
+                terminal,
+                opuesto: OPUESTOS[terminal] ?? "?"
+              });
+            }
+          });
+        });
+        return registros;
+      }
+
+      function renderizarPronostico() {
+        const registros = extraerSorteos(ultimoResultado);
+        const ultimoSorteo = registros.length
+          ? [...registros].sort((a, b) => {
+              if (b.idxHora !== a.idxHora) return b.idxHora - a.idxHora;
+              return a.ruleta === "la_granjita" ? -1 : 1;
+            })[0]
+          : null;
+
+        document.getElementById("tituloPronostico").textContent =
+          tituloConFecha(ultimaProyeccion, fechaProyeccionDoc);
+        document.getElementById("imgPortadaCierre").src =
+          rutaImagenCierre(ultimaProyeccion, ultimoSorteo);
+
+        const fijos = ultimaProyeccion?.fijos || {};
+        const usados = new Set();
+
+        document.getElementById("fijoDeuda").textContent =
+          resolverFijoUnico(fijos.Deuda_Historica, usados);
+        document.getElementById("fijoSimetria").textContent =
+          resolverFijoUnico(fijos.Vertice_Simetria || fijos.Vértice_Simetria, usados);
+        document.getElementById("fijoTriangulacion").textContent =
+          resolverFijoUnico(fijos.Triangulacion_VIP, usados);
+        document.getElementById("fijoRuptura").textContent =
+          resolverFijoUnico(fijos.Mecanica_Ruptura || fijos.Mecánica_Ruptura, usados);
+        document.getElementById("fijoEspejo").textContent =
+          resolverFijoUnico(fijos.Espejo_Acuario || fijos.Espejo_Acuático, usados);
+      }
+
+      function renderizarAnalisis() {
+        const registros = extraerSorteos(ultimoResultado);
+        if (!registros.length) {
+          document.getElementById("contenidoCintaDinamico").innerHTML =
+            `<p>Aún no hay sorteos registrados en <strong>${ultimaFechaResultado || fechaHoy}</strong> para mostrar el análisis de cinta.</p>`;
+          return;
+        }
+
+        const conteoTerminales = {};
+        const conteoAnimales = {};
+
+        registros.forEach(r => {
+          conteoTerminales[r.terminal] = (conteoTerminales[r.terminal] || 0) + 1;
+          const clave = `${r.numero} ${r.animal}`;
+          conteoAnimales[clave] = (conteoAnimales[clave] || 0) + 1;
+        });
+
+        const terminalesTop = Object.entries(conteoTerminales)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3);
+
+        const repetidos = Object.entries(conteoAnimales)
+          .filter(([, cant]) => cant >= 2)
+          .map(([nombre, cant]) => `${nombre} (${cant})`);
+
+        const topLabels = terminalesTop.map(([t]) => `Terminal ${t}`);
+        const reglasSalto = terminalesTop.map(([t]) => `${t}↔${OPUESTOS[t]}`).join(" / ");
+        const focoBloqueo = repetidos.length
+          ? `Concentración detectada en <strong>${repetidos.join(", ")}</strong>.`
+          : `Distribución activa registrada en la jornada.`;
+
+        document.getElementById("contenidoCintaDinamico").innerHTML = `
+          <p>En la lectura de cinta de <strong>${ultimaFechaResultado || fechaHoy}</strong> se observa mayor frecuencia en <strong>${topLabels.join(", ")}</strong>. ${focoBloqueo} Patrón de salto asociado: <strong>${reglasSalto}</strong>.</p>
+          <p>Seguimiento comparativo entre <strong>Lotto Activo</strong> y <strong>La Granjita</strong> según los sorteos cargados.</p>
+        `;
+      }
+
+      function renderizarDato() {
+        const registros = extraerSorteos(ultimoResultado);
+        if (!registros.length) {
+          document.getElementById("textoDatoCaliente").textContent =
+            "Aún no hay sorteos registrados en la jornada para mostrar el último movimiento.";
+          return;
+        }
+
+        const ultimo = [...registros].sort((a, b) => {
+          if (b.idxHora !== a.idxHora) return b.idxHora - a.idxHora;
+          return a.ruleta === "la_granjita" ? -1 : 1;
+        })[0];
+
+        const siguienteHora = HORAS[Math.min(ultimo.idxHora + 1, HORAS.length - 1)];
+        document.getElementById("textoDatoCaliente").textContent =
+          `Último sorteo registrado en ${ultimo.nombreRuleta} (${ultimo.hora}): ${ultimo.numero} ${ultimo.animal} — Terminal ${ultimo.terminal}, opuesto ${ultimo.opuesto}. Próximo bloque horario: ${siguienteHora}.`;
+      }
+
+      window.__pintarVistaHorus = function (targetId) {
+        if (targetId === "vistaPronostico") renderizarPronostico();
+        if (targetId === "vistaAnalisis") renderizarAnalisis();
+        if (targetId === "vistaDato") renderizarDato();
+      };
+
+      function obtenerFechaVzla() {
+        const ahora = new Date();
+        const vzla = new Date(ahora.getTime() - 4 * 60 * 60 * 1000);
+        return vzla.toISOString().slice(0, 10);
+      }
+
+      function obtenerFechaMananaVzla() {
+        const ahora = new Date();
+        const mananaVzla = new Date(ahora.getTime() - 4 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000);
+        return mananaVzla.toISOString().slice(0, 10);
+      }
+
+      const fechaHoy = obtenerFechaVzla();
+      const fechaProyeccionDoc = obtenerFechaMananaVzla();
+
+      onSnapshot(doc(db, "resultados_diarios", fechaHoy), (snap) => {
+        if (snap.exists()) {
+          ultimoResultado = snap.data();
+          ultimaFechaResultado = snap.id;
+          if (window.__vistaActualHorus) window.__pintarVistaHorus(window.__vistaActualHorus);
+        }
+      }, (err) => {
+        console.warn("Error leyendo resultados_diarios:", err.message);
+      });
+
+      onSnapshot(doc(db, "proyecciones", fechaProyeccionDoc), (snap) => {
+        if (snap.exists()) {
+          ultimaProyeccion = snap.data();
+          if (window.__vistaActualHorus === "vistaPronostico") renderizarPronostico();
+        }
+      }, (err) => {
+        console.warn("Error leyendo proyecciones:", err.message);
+      });
+    } catch (err) {
+      console.warn("Firestore no disponible en este entorno:", err.message);
+    }
+  </script>
+</body>
+</html>
