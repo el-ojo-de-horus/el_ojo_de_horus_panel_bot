@@ -188,6 +188,36 @@ def buscar_imagen_animalito(num_raw, carpeta: str = CARPETA_IMG) -> str:
     return f"{carpeta}/{pad}.png"
 
 
+def jornada_esta_completa(data_hoy: dict) -> tuple[bool, dict]:
+    """Verifica que lotto_activo y la_granjita tengan las 12 horas completas (08:00 AM - 07:00 PM)."""
+    if not isinstance(data_hoy, dict) or not data_hoy:
+        return False, {
+            "lotto_activo": list(HORAS_ORDENADAS),
+            "la_granjita": list(HORAS_ORDENADAS),
+        }
+
+    faltantes = {}
+    completa = True
+
+    for op in ("lotto_activo", "la_granjita"):
+        bloque = data_hoy.get(op)
+        ausentes = []
+        for hora in HORAS_ORDENADAS:
+            entry = bloque.get(hora) if isinstance(bloque, dict) else None
+            num = (
+                normalizar_clave_animal(entry.get("numero"))
+                if isinstance(entry, dict) and entry.get("numero") is not None
+                else ""
+            )
+            if not num or num not in ANIMALITOS:
+                ausentes.append(hora)
+        faltantes[op] = ausentes
+        if ausentes:
+            completa = False
+
+    return completa, faltantes
+
+
 def obtener_ultimo_cierre(data_hoy: dict) -> dict:
     """Obtiene el último animalito sorteado en el día (priorizando Lotto Activo y luego La Granjita)."""
     for op in ("lotto_activo", "la_granjita"):
@@ -439,290 +469,4 @@ def construir_analisis_html(
 
     txt_eventos = ", ".join(eventos_pizarra) if eventos_pizarra else "sin repeticiones múltiples relevantes"
 
-    fijo_ruptura = fijos_formateados.get("Mecanica_Ruptura", {})
-    fijo_triang = fijos_formateados.get("Triangulacion_VIP", {})
-    fijo_simetria = fijos_formateados.get("Vertice_Simetria", {})
-    fijo_deuda = fijos_formateados.get("Deuda_Historica", {})
-    fijo_espejo = fijos_formateados.get("Espejo_Acuario", {})
-
-    impulso_a = formatear_etiqueta_animal(fijo_simetria.get("numero", "10"), con_parentesis=True)
-    impulso_b = formatear_etiqueta_animal(fijo_ruptura.get("numero", "30"), con_parentesis=True)
-    refuerzo_c = formatear_etiqueta_animal(fijo_triang.get("numero", "13"), con_parentesis=True)
-    proy_d = formatear_etiqueta_animal(fijo_espejo.get("numero", "00"), con_parentesis=True)
-    proy_e = formatear_etiqueta_animal(fijo_deuda.get("numero", "0"), con_parentesis=True)
-
-    destacado_1 = formatear_etiqueta_animal(top_5_probables[0]["numero"], con_parentesis=True) if len(top_5_probables) > 0 else refuerzo_c
-    destacado_2 = formatear_etiqueta_animal(top_5_probables[1]["numero"], con_parentesis=True) if len(top_5_probables) > 1 else impulso_b
-
-    top_destacado = conteo_total.most_common(2)
-    ref_1 = formatear_etiqueta_animal(top_destacado[0][0], con_parentesis=True) if len(top_destacado) > 0 else "Perro (27)"
-    ref_2 = formatear_etiqueta_animal(top_destacado[1][0], con_parentesis=True) if len(top_destacado) > 1 else "Alacrán (04)"
-
-    p1 = (
-        f"<p>En la lectura de cinta del {dia_base_minus} detectamos una fuerte concentración en la "
-        f"<strong>Terminal {txt_terminales}</strong> ({txt_eventos}). Aplicando la "
-        f"<strong>Mecánica de Ruptura</strong> y la <strong>Tabla de Jale</strong>, el algoritmo libera presión "
-        f"impulsando la tracción hacia el <strong>{impulso_a}</strong> y el <strong>{impulso_b}</strong>, "
-        f"reforzando la continuidad del <strong>{refuerzo_c}</strong> y la proyección de la "
-        f"<strong>{proy_d}</strong> y el <strong>{proy_e}</strong>.</p>"
-    )
-
-    p2 = (
-        f"<p>Asimismo, la contundencia del {ref_1} y la repetición del {ref_2} en la jornada del {dia_base_minus} "
-        f"posicionan al <strong>{destacado_1}</strong> y al <strong>{destacado_2}</strong> al frente de la matriz de datos "
-        f"para la jornada de este {dia_proy_cap.lower()}.</p>"
-    )
-
-    html_completo = f"{titulo_html}\n  {p1}\n  {p2}"
-    return titulo_html, html_completo
-
-
-def construir_dato_auditor_html(
-    manana: datetime.date,
-    conteo_total: Counter,
-    conteo_la: Counter,
-    fijos_formateados: dict,
-    top_5_probables: list,
-) -> tuple[str, str]:
-    """Genera el texto plano y el bloque HTML del Dato Caliente de la Hora para index.html."""
-    dia_proy_minus = DIAS_ES[manana.weekday()].lower()
-
-    rep_la = [c for c, cant in conteo_la.most_common() if cant >= 2]
-    rep_total = [c for c, cant in conteo_total.most_common() if cant >= 2]
-
-    clave_la = rep_la[0] if rep_la else (conteo_la.most_common(1)[0][0] if conteo_la else "27")
-    clave_cinta = next((c for c in rep_total if c != clave_la), rep_total[0] if rep_total else "4")
-
-    etq_la_mayus = formatear_etiqueta_animal(clave_la).upper()
-    etq_cinta_mayus = formatear_etiqueta_animal(clave_cinta).upper()
-
-    fijo_ruptura = fijos_formateados.get("Mecanica_Ruptura", {})
-    fijo_triang = fijos_formateados.get("Triangulacion_VIP", {})
-
-    clave_descarga = top_5_probables[1]["numero"] if len(top_5_probables) > 1 else fijo_ruptura.get("numero", "30")
-    clave_cruce = top_5_probables[0]["numero"] if len(top_5_probables) > 0 else fijo_triang.get("numero", "13")
-
-    etq_descarga_mayus = formatear_etiqueta_animal(clave_descarga).upper()
-    etq_cruce_mayus = formatear_etiqueta_animal(clave_cruce).upper()
-
-    texto_plano = (
-        f"¡Mucho ojo aquí, jugador! Cuando el {etq_la_mayus} te repite en Lotto Activo y el "
-        f"{etq_cinta_mayus} te satura la cinta entre ambas pizarras, la matriz de datos aprieta la lectura "
-        f"y deja marcadas las líneas de arrastre. Para destrabar la lectura este {dia_proy_minus} desde temprano, "
-        f"el algoritmo siempre busca la rápida descarga del {etq_descarga_mayus} o el cruce directo del "
-        f"{etq_cruce_mayus}. ¡Muy atento desde el primer sorteo de las 08:00 AM !"
-    )
-
-    html_dato = (
-        f'<div class="dato-curioso">\n'
-        f'    💡 <strong><em>El Dato Caliente de la Hora:</em></strong><br />\n'
-        f'    <em>{texto_plano}</em>\n'
-        f'  </div>'
-    )
-
-    return texto_plano, html_dato
-
-
-def construir_pronostico_html(
-    manana: datetime.date,
-    fijos_formateados: dict,
-    imagen_cierre: str,
-) -> tuple[str, str]:
-    """Genera el título y el bloque HTML de Los 5 Fijos para que index.html solo lo pinte."""
-    dia_proy_cap = DIAS_ES[manana.weekday()]
-    mes_proy_cap = MESES_ES[manana.month].capitalize()
-    titulo_texto = f"📊 Los 5 Fijos del {dia_proy_cap} {manana.day:02d} de {mes_proy_cap}"
-
-    def item_fijo(clave_fijo: str, etiqueta_pilar: str, clase_color: str) -> str:
-        datos = fijos_formateados.get(clave_fijo, {})
-        num = normalizar_clave_animal(datos.get("numero", ""))
-        animal = datos.get("animal") or nombre_animal(num)
-        etiqueta_animal = "--"
-        if num and animal:
-            etiqueta_animal = f"{'00' if num == '00' else num.zfill(2)} {animal}"
-        elif num:
-            etiqueta_animal = formatear_etiqueta_animal(num)
-        return (
-            f'  <div class="proyeccion-item">\n'
-            f'    <span class="tipo">{etiqueta_pilar}</span>\n'
-            f'    <span class="animalito {clase_color}">{etiqueta_animal}</span>\n'
-            f'  </div>'
-        )
-
-    img_src = imagen_cierre or "img/logo.jpg"
-
-    html_pronostico = (
-        f'<div class="proyeccion-header">\n'
-        f'  <div><img id="imgPortadaCierre" alt="Imagen de cierre" src="{img_src}" onerror="this.onerror=null;this.src=\'img/logo.jpg\';" /></div>\n'
-        f'  <br />{titulo_texto}\n'
-        f'</div>\n'
-        f'{item_fijo("Deuda_Historica", "Pilar Deuda Histórica:", "c1")}\n'
-        f'{item_fijo("Vertice_Simetria", "Pilar Vértice Simetría:", "c2")}\n'
-        f'{item_fijo("Triangulacion_VIP", "Triangulación VIP:", "c3")}\n'
-        f'{item_fijo("Mecanica_Ruptura", "Mecánica de Ruptura:", "c4")}\n'
-        f'{item_fijo("Espejo_Acuario", "Espejo Acuático:", "c5")}'
-    )
-
-    return titulo_texto, html_pronostico
-
-
-def generar_proyeccion():
-    hoy = fecha_vzla()
-    manana = hoy + datetime.timedelta(days=1)
-
-    hoy_str = hoy.isoformat()
-    manana_str = manana.isoformat()
-    fecha_info = formatear_fecha_es(manana)
-
-    doc_hoy = db.collection(COLECCION_RESULTADOS).document(hoy_str).get()
-    data_hoy = doc_hoy.to_dict() if doc_hoy.exists else {}
-
-    vertice, bases = calcular_piramide(manana)
-    universo_term = list(set([vertice] + list(bases)))
-    universo_nums = [n for t in universo_term for n in TERMINALES[t]]
-
-    (
-        saturadas,
-        triangulaciones,
-        jales_ordenados,
-        conteo_term_hoy,
-        conteo_total,
-        conteo_la,
-        conteo_lg,
-        primera_la,
-    ) = analizar_cinta_dia(data_hoy)
-
-    historico = obtener_historico_reciente(hoy, dias=7)
-    ultimo_cierre = obtener_ultimo_cierre(data_hoy)
-
-    pool_respaldo = sorted(
-        ORDEN_CLAVES_ANIMALITOS,
-        key=lambda n: (historico.get(n, 0), ORDEN_CLAVES_ANIMALITOS.index(n))
-    )
-    usados = set()
-    fijos_raw = {}
-
-    # 1. Deuda histórica dentro del universo
-    cand_deuda = sorted(universo_nums, key=lambda n: historico.get(n, 0))
-    fijos_raw["Deuda_Historica"] = seleccionar_clave_unica(cand_deuda, usados, pool_respaldo)
-
-    # 2. Vértice simetría
-    cand_simetria = list(TERMINALES[vertice][1:]) + list(TERMINALES[vertice][:1])
-    fijos_raw["Vertice_Simetria"] = seleccionar_clave_unica(cand_simetria, usados, pool_respaldo)
-
-    # 3. Triangulación VIP
-    if triangulaciones:
-        cand_triangulacion = list(triangulaciones) + list(TERMINALES[bases[0]])
-    else:
-        cand_triangulacion = list(TERMINALES[bases[0]])
-    fijos_raw["Triangulacion_VIP"] = seleccionar_clave_unica(cand_triangulacion, usados, pool_respaldo)
-
-    # 4. Mecánica de ruptura
-    if saturadas:
-        t_sat = saturadas[0]
-        t_op = (t_sat + 5) % 10
-        cand_ruptura = list(TERMINALES[t_op][2:]) + list(TERMINALES[t_op][:2])
-    else:
-        t_op_v = (vertice + 5) % 10
-        cand_ruptura = list(TERMINALES[t_op_v])
-    fijos_raw["Mecanica_Ruptura"] = seleccionar_clave_unica(cand_ruptura, usados, pool_respaldo)
-
-    # 5. Espejo acuático
-    v_clave = normalizar_clave_animal(fijos_raw["Vertice_Simetria"])
-    if v_clave in ("0", "10", "20", "30"):
-        espejo_primario = "00" if v_clave != "00" else "0"
-        cand_espejo = [espejo_primario, "0", "00"] + list(TERMINALES[0])
-    else:
-        term_v = int(v_clave[-1])
-        cand_espejo = [str(term_v)] + list(TERMINALES[term_v])
-    fijos_raw["Espejo_Acuario"] = seleccionar_clave_unica(cand_espejo, usados, pool_respaldo)
-
-    fijos_formateados = {
-        k: {
-            "numero": normalizar_clave_animal(v),
-            "animal": nombre_animal(v)
-        }
-        for k, v in fijos_raw.items()
-    }
-
-    resumen_5_fijos = [
-        formatear_etiqueta_animal(item["numero"])
-        for item in fijos_formateados.values()
-    ]
-
-    top_5_probables = calcular_top_5_probables(
-        claves_fijos=set(fijos_raw.values()),
-        vertice=vertice,
-        bases=bases,
-        saturadas=saturadas,
-        triangulaciones=triangulaciones,
-        jales_ordenados=jales_ordenados,
-        historico=historico,
-        conteo_term_hoy=conteo_term_hoy,
-    )
-    resumen_top_5_probables = [item["etiqueta"] for item in top_5_probables]
-
-    pronostico_titulo, pronostico_html = construir_pronostico_html(
-        manana=manana,
-        fijos_formateados=fijos_formateados,
-        imagen_cierre=ultimo_cierre["imagen"],
-    )
-
-    analisis_tecnico_titulo, analisis_tecnico_html = construir_analisis_html(
-        hoy=hoy,
-        manana=manana,
-        conteo_term_hoy=conteo_term_hoy,
-        conteo_total=conteo_total,
-        conteo_la=conteo_la,
-        conteo_lg=conteo_lg,
-        primera_la=primera_la,
-        fijos_formateados=fijos_formateados,
-        top_5_probables=top_5_probables,
-    )
-
-    dato_auditor, dato_auditor_html = construir_dato_auditor_html(
-        manana=manana,
-        conteo_total=conteo_total,
-        conteo_la=conteo_la,
-        fijos_formateados=fijos_formateados,
-        top_5_probables=top_5_probables,
-    )
-
-    proyeccion = {
-        "fecha_base": hoy_str,
-        "fecha_proyeccion": manana_str,
-        "fecha_legible": fecha_info["texto"],
-        "fecha_desglose": {
-            "dia": fecha_info["dia"],
-            "mes": fecha_info["mes_nombre"],
-            "mes_numero": fecha_info["mes_numero"],
-            "anio": fecha_info["anio"],
-        },
-        "piramide": {"vertice": vertice, "bases": list(bases)},
-        "saturadas": saturadas,
-        "jales_activados": [formatear_etiqueta_animal(c) for c in jales_ordenados[:6]],
-        "ultimo_cierre": ultimo_cierre,
-        "imagen_cierre": ultimo_cierre["imagen"],
-        "fijos": fijos_formateados,
-        "resumen_5_fijos": resumen_5_fijos,
-        "top_5_probables": top_5_probables,
-        "resumen_top_5_probables": resumen_top_5_probables,
-        "pronostico_titulo": pronostico_titulo,
-        "pronostico_html": pronostico_html,
-        "analisis_tecnico_titulo": analisis_tecnico_titulo,
-        "analisis_tecnico_html": analisis_tecnico_html,
-        "dato_auditor": dato_auditor,
-        "dato_auditor_html": dato_auditor_html,
-    }
-
-    proyeccion["tripletas"] = firestore.DELETE_FIELD
-
-    db.collection(COLECCION_PROYECCIONES).document(manana_str).set(proyeccion, merge=True)
-    print(f"✅ Cerebro ejecutado. Base {hoy_str} -> Proyección para {fecha_info['texto']} ({manana_str}).")
-    print(f"🎯 Los 5 fijos: {' | '.join(resumen_5_fijos)}")
-    print(f"🔥 Top 5 mayor probabilidad: {' | '.join(resumen_top_5_probables)}")
-    print(f"🖼️ Último cierre: {ultimo_cierre['numero']} {ultimo_cierre['animal']} ({ultimo_cierre['hora']}) -> {ultimo_cierre['imagen']}")
-
-
-if __name__ == "__main__":
-    generar_proyeccion()
+    fijo_ruptura = fijos_formate
