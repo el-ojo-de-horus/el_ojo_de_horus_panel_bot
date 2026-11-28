@@ -707,37 +707,82 @@
       const db = getFirestore(app);
 
       let ultimaProyeccion = null;
+      let estadoSinDocumento = false;
+
+      function obtenerFechaPartesVzla(offsetDias = 0) {
+        const msBase = Date.now() + offsetDias * 24 * 60 * 60 * 1000;
+        const partes = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "America/Caracas",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).formatToParts(new Date(msBase));
+
+        const anio = partes.find(p => p.type === "year")?.value || "2026";
+        const mes = partes.find(p => p.type === "month")?.value || "01";
+        const dia = partes.find(p => p.type === "day")?.value || "01";
+        return `${anio}-${mes}-${dia}`;
+      }
 
       function renderizarPronostico() {
         const contenedor = document.getElementById("contenedorPronosticoDinamico");
-        if (!ultimaProyeccion || !ultimaProyeccion.pronostico_html) return;
-        contenedor.innerHTML = ultimaProyeccion.pronostico_html;
+        if (!contenedor) return;
+
+        if (ultimaProyeccion && ultimaProyeccion.pronostico_html) {
+          contenedor.innerHTML = ultimaProyeccion.pronostico_html;
+          return;
+        }
+
+        if (estadoSinDocumento) {
+          contenedor.innerHTML = `
+            <div class="proyeccion-header">
+              <div>
+                <img
+                  id="imgPortadaCierre"
+                  alt="Logo El Ojo De Horus"
+                  src="img/logo.jpg"
+                  onerror="this.onerror=null;this.src='img/logo.jpg';"
+                />
+              </div>
+              <br />📊 PRONÓSTICO EN PREPARACIÓN
+            </div>
+            <div class="proyeccion-item">
+              <span class="tipo">El cerebro está esperando el cierre completo de la jornada (08:00 AM – 07:00 PM) para emitir una proyección precisa. Vuelve a consultar al completar los sorteos del día.</span>
+            </div>
+          `;
+        }
       }
 
       function renderizarAnalisis() {
         const contenedor = document.getElementById("contenidoCintaDinamico");
-        if (!ultimaProyeccion || !ultimaProyeccion.analisis_tecnico_html) {
-          contenedor.innerHTML = `
-            <h2>📉 Análisis de Cinta y Detección de Bloqueos</h2>
-            <p>Esperando proyección generada por el cerebro.</p>
-          `;
+        if (!contenedor) return;
+
+        if (ultimaProyeccion && ultimaProyeccion.analisis_tecnico_html) {
+          contenedor.innerHTML = ultimaProyeccion.analisis_tecnico_html;
           return;
         }
-        contenedor.innerHTML = ultimaProyeccion.analisis_tecnico_html;
+
+        contenedor.innerHTML = `
+          <h2>📉 Análisis de Cinta y Detección de Bloqueos</h2>
+          <p>La lectura de cinta y detección de bloqueos se genera una vez que se completa la jornada diaria en el sistema. Al cerrar la jornada podrás ver aquí el análisis completo.</p>
+        `;
       }
 
       function renderizarDato() {
         const contenedor = document.getElementById("contenedorDatoAuditor");
-        if (!ultimaProyeccion || !ultimaProyeccion.dato_auditor_html) {
-          contenedor.innerHTML = `
-            <div class="dato-curioso">
-              💡 <strong><em>El Dato Caliente de la Hora:</em></strong><br />
-              <em>Esperando proyección generada por el cerebro.</em>
-            </div>
-          `;
+        if (!contenedor) return;
+
+        if (ultimaProyeccion && ultimaProyeccion.dato_auditor_html) {
+          contenedor.innerHTML = ultimaProyeccion.dato_auditor_html;
           return;
         }
-        contenedor.innerHTML = ultimaProyeccion.dato_auditor_html;
+
+        contenedor.innerHTML = `
+          <div class="dato-curioso">
+            💡 <strong><em>El Dato Caliente de la Hora:</em></strong><br />
+            <em>El Dato del Auditor se actualiza automáticamente cuando el cerebro procesa la jornada completa. ¡Revisa más tarde para ver las líneas marcadas!</em>
+          </div>
+        `;
       }
 
       window.__pintarVistaHorus = function (targetId) {
@@ -746,18 +791,19 @@
         if (targetId === "vistaDato") renderizarDato();
       };
 
-      function obtenerFechaMananaVzla() {
-        const ahora = new Date();
-        const mananaVzla = new Date(ahora.getTime() - 4 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000);
-        return mananaVzla.toISOString().slice(0, 10);
-      }
+      const fechaMananaVzla = obtenerFechaPartesVzla(1);
 
-      const fechaProyeccionDoc = obtenerFechaMananaVzla();
-
-      onSnapshot(doc(db, "proyecciones", fechaProyeccionDoc), (snap) => {
+      onSnapshot(doc(db, "proyecciones", fechaMananaVzla), (snap) => {
         if (snap.exists()) {
           ultimaProyeccion = snap.data();
-          if (window.__vistaActualHorus) window.__pintarVistaHorus(window.__vistaActualHorus);
+          estadoSinDocumento = false;
+        } else {
+          ultimaProyeccion = null;
+          estadoSinDocumento = true;
+        }
+
+        if (window.__vistaActualHorus) {
+          window.__pintarVistaHorus(window.__vistaActualHorus);
         }
       }, (err) => {
         console.warn("Error leyendo proyecciones:", err.message);
